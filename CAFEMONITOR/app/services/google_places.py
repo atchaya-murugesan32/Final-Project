@@ -3,21 +3,39 @@ import requests
 from app.config.settings import settings
 
 
-def get_cafes(city: str):
+def get_cafes(text_query: str, lat: float, lng: float, radius: float = 5000.0):
     url = "https://places.googleapis.com/v1/places:searchText"
 
     headers = {
         "Content-Type": "application/json",
         "X-Goog-Api-Key": settings.GOOGLE_PLACES_API_KEY,
         "X-Goog-FieldMask": (
-            "places.displayName,places.formattedAddress,places.rating,"
-            "places.priceLevel"
+            "places.id,"
+            "places.displayName,"
+            "places.formattedAddress,"
+            "places.googleMapsUri,"
+            "places.photos,"
+            "places.location,"
+            "places.regularOpeningHours,"
+            "places.rating,"
+            "places.userRatingCount,"
+            "places.priceRange,"
+            "places.websiteUri"
         ),
     }
 
     payload = {
-        "textQuery": f"cafes in {city}",
+        "textQuery": text_query,
         "pageSize": 5,
+        "locationBias": {
+            "circle": {
+                "center": {
+                    "latitude": lat,
+                    "longitude": lng,
+                },
+                "radius": radius,
+            }
+        },
     }
 
     response = requests.post(url, json=payload, headers=headers, timeout=15)

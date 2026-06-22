@@ -5,6 +5,7 @@ class CafeResponse(BaseModel):
     id: str
     name: str
     address: str
+    distance_from_user: float
     rating: float
     rating_count: int
     busyness: str
