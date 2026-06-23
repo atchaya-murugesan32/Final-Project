@@ -62,7 +62,7 @@ function BusynessBadge({ busyness, percent}) {
   );
 }
 
-export default function CafeCard({ cafe, onAddPress, editMode, onRemovePress }) {
+export default function CafeCard({ cafe, onAddPress, editMode, onRemovePress, uiBusyness }) {
   const router = useRouter();
   const { cafes } = useCafes();
   const added = cafes.some((item) => item.id === cafe.id);
@@ -75,7 +75,8 @@ export default function CafeCard({ cafe, onAddPress, editMode, onRemovePress }) 
   const ratingCount = cafe.rating_count ?? cafe.ratingCount ?? 0;
   const rating = typeof cafe.rating === 'number' ? cafe.rating : 0;
   const distanceFromUser = cafe.distance_from_user ?? cafe.distanceMi ?? null;
-  const busynessPercent = cafe.busynessPercent ?? cafe.busyness_percent ?? 0;
+  const displayBusyness = (uiBusyness && uiBusyness.busyness) ?? cafe.busyness;
+  const busynessPercent = uiBusyness?.busynessPercent ?? cafe.busynessPercent ?? cafe.busyness_percent ?? 0;
 
   return (
     <TouchableOpacity
@@ -169,7 +170,7 @@ export default function CafeCard({ cafe, onAddPress, editMode, onRemovePress }) 
 
         {/* Busyness + star rating row */}
         <View style={styles.bottomRow}>
-          <BusynessBadge busyness={cafe.busyness} percent={busynessPercent} />
+          <BusynessBadge busyness={displayBusyness} percent={busynessPercent} />
           <View style={styles.starRow}>
             <StarRating rating={rating} />
             <RetroText style={styles.ratingCount}>({ratingCount})</RetroText>

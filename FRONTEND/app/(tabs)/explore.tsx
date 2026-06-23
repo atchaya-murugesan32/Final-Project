@@ -22,6 +22,15 @@ export default function ExploreScreen() {
   const { addCafe } = useCafes();
   const [query, setQuery] = useState('');
   const [results, setResults] = useState<Cafe[]>([]);
+  const [busynessMap, setBusynessMap] = useState<Record<string, { busyness: string; busynessPercent: number }>>({});
+
+  function generateRandomBusyness() {
+    const percent = Math.floor(Math.random() * 86) + 5; // 5 - 90
+    let label = 'Moderate';
+    if (percent < 35) label = 'Quiet';
+    else if (percent >= 70) label = 'Busy';
+    return { busyness: label, busynessPercent: percent };
+  }
 
   function handleAddCafe(cafe: Cafe) {
     //setResults((prev) => prev.filter((c) => c.id !== cafe.id));
@@ -44,10 +53,22 @@ export default function ExploreScreen() {
           value={query}
           onChangeText={setQuery}
           onSubmitEditing={async () => {
-            const coords = await getUserLocation();
-            if (!coords) return;
-            const data = await searchPlaces(query, coords.latitude, coords.longitude);
-            setResults(data);
+            let coords = await getUserLocation();
+            // On web or when location permission denied, fall back to a sensible default
+            if (!coords) {
+              coords = { latitude: 37.7765, longitude: -122.4170 };
+            }
+            const raw = await searchPlaces(query, coords.latitude, coords.longitude);
+            // Generate display-only busyness values for UI (do not mutate the original items)
+            const newMap: Record<string, { busyness: string; busynessPercent: number }> = {};
+            raw.forEach((item: any) => {
+              // preserve any existing UI map entry
+              if (!busynessMap[item.id]) {
+                newMap[item.id] = generateRandomBusyness();
+              }
+            });
+            setBusynessMap((prev) => ({ ...prev, ...newMap }));
+            setResults(raw);
           }}
           returnKeyType="search"
           style={styles.input}
@@ -70,7 +91,7 @@ export default function ExploreScreen() {
         data={results}
         keyExtractor={(item) => item.id}
         renderItem={({ item }) => (
-          <CafeCard cafe={item} onAddPress={() => handleAddCafe(item)} />
+          <CafeCard cafe={item} uiBusyness={busynessMap[item.id]} onAddPress={() => handleAddCafe(item)} />
         )}
         ListEmptyComponent={
           query.length === 0 ? (
