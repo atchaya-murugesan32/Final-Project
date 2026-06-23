@@ -1,5 +1,5 @@
 from app.models.response_models import CafeResponse
-from app.services.google_places import get_cafes
+from app.services.google_places import get_cafes, get_place_details
 from app.services.distance import calculate_distance
 
 from app.config.settings import settings
@@ -16,11 +16,33 @@ def get_recommendations(text_query: str, lat: float, lng: float, radius: float =
 
         # extract photo names and build URLs
         photos = place.get("photos", [])
-        photo_urls = [
-            f"https://places.googleapis.com/v1/{photo['name']}/media"
-            f"?maxWidthPx=600&key={settings.GOOGLE_PLACES_API_KEY}"
-            for photo in photos
+        if not photos:
+            details = get_place_details(place.get("id", ""))
+            photos = details.get("photos", [])
+
+        fallback_images = [
+            "https://images.unsplash.com/photo-1501339847302-ac426a4a7cbb?auto=format&fit=crop&w=600&q=80",
+            "https://images.unsplash.com/photo-1495474472287-4d71bcdd2085?auto=format&fit=crop&w=600&q=80",
+            "https://images.unsplash.com/photo-1509042239860-f550ce710b93?auto=format&fit=crop&w=600&q=80",
+            "https://images.unsplash.com/photo-1511920170033-f8396924c348?auto=format&fit=crop&w=600&q=80",
+            "https://images.unsplash.com/photo-1453614512568-c4024d13c247?auto=format&fit=crop&w=600&q=80",
+            "https://images.unsplash.com/photo-1554118811-1e0d58224f24?auto=format&fit=crop&w=600&q=80",
+            "https://images.unsplash.com/photo-1559925393-8be0ec4767c8?auto=format&fit=crop&w=600&q=80",
+            "https://images.unsplash.com/photo-1442512595331-e89e73853f31?auto=format&fit=crop&w=600&q=80",
+            "https://images.unsplash.com/photo-1514432324607-a09d9b4aefdd?auto=format&fit=crop&w=600&q=80",
+            "https://images.unsplash.com/photo-1498804103079-a6351b050096?auto=format&fit=crop&w=600&q=80",
         ]
+
+        if photos:
+            photo_urls = [
+                f"https://places.googleapis.com/v1/{photo['name']}/media"
+                f"?maxWidthPx=600&key={settings.GOOGLE_PLACES_API_KEY}"
+                for photo in photos
+            ]
+        else:
+            place_hash = sum(ord(c) for c in (place.get("id", "") + name))
+            fallback_idx = place_hash % len(fallback_images)
+            photo_urls = [fallback_images[fallback_idx]]
 
         # extract opening hours as a list of strings (e.g. "Monday: 8AM–6PM")
         opening_hours_data = place.get("regularOpeningHours", {})
@@ -58,6 +80,8 @@ def get_recommendations(text_query: str, lat: float, lng: float, radius: float =
                 website_uri=place.get("websiteUri"),
                 photos=photo_urls,
                 opening_hours=opening_hours,
+                latitude=lat_location,
+                longitude=lng_location,
             )
         )
 

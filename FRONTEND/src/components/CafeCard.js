@@ -1,7 +1,8 @@
-import { useEffect, useRef, useState } from 'react';
+import { useEffect, useRef } from 'react';
 import { View, Text, Image, TouchableOpacity, Animated, StyleSheet, Dimensions } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { useRouter } from 'expo-router';
+import { useCafes } from '../context/CafesContext';
 
 const CARD_WIDTH = Math.min(Dimensions.get('window').width - 32, 500);
 
@@ -63,22 +64,34 @@ function BusynessBadge({ busyness, percent}) {
 
 export default function CafeCard({ cafe, onAddPress, editMode, onRemovePress }) {
   const router = useRouter();
-  const [added, setAdded] = useState(false);
+  const { cafes } = useCafes();
+  const added = cafes.some((item) => item.id === cafe.id);
 
   function handleAdd() {
-    setAdded(true);
     onAddPress?.();
   }
+
+  const imageUri = cafe.photos?.[0] ?? cafe.images?.[0]?.uri ?? cafe.image ?? null;
+  const ratingCount = cafe.rating_count ?? cafe.ratingCount ?? 0;
+  const rating = typeof cafe.rating === 'number' ? cafe.rating : 0;
+  const distanceFromUser = cafe.distance_from_user ?? cafe.distanceMi ?? null;
+  const busynessPercent = cafe.busynessPercent ?? cafe.busyness_percent ?? 0;
 
   return (
     <TouchableOpacity
       style={styles.card}
-      onPress={() => router.push({ pathname: '/cafe/[id]', params: { id: cafe.id } })}
+      onPress={() => router.push({ pathname: '/cafe/[id]', params: { id: cafe.id, cafeData: JSON.stringify(cafe) } })}
       activeOpacity={0.88}
     >
       {/* Image with overlays */}
       <View style={styles.imageContainer}>
-        <Image source={{ uri: cafe.photos[0] }} style={styles.image} />
+        {imageUri ? (
+          <Image source={{ uri: imageUri }} style={styles.image} />
+        ) : (
+          <View style={[styles.image, styles.imagePlaceholder]}>
+            <RetroText style={styles.placeholderText}>No image available</RetroText>
+          </View>
+        )}
 
         {/* Name — top left overlay */}
         <View style={styles.imageOverlay}>
@@ -122,15 +135,15 @@ export default function CafeCard({ cafe, onAddPress, editMode, onRemovePress }) 
       <View style={styles.info}>
 
         {/* Distance + seats row — each renders only when the value exists */}
-        {(cafe.distance_from_user != null || cafe.seatsAvailable != null) && (
+        {(distanceFromUser != null || cafe.seatsAvailable != null) && (
           <View style={styles.metaRow}>
-            {cafe.distance_from_user != null && (
+            {distanceFromUser != null && (
               <>
                 <Ionicons name="time-outline" size={13} color="#9AA5B1" />
-                <RetroText style={styles.metaText}>{cafe.distance_from_user.toFixed(2)} km away</RetroText>
+                <RetroText style={styles.metaText}>{distanceFromUser.toFixed(2)} km away</RetroText>
               </>
             )}
-            {cafe.distance_from_user != null && cafe.seatsAvailable != null && (
+            {distanceFromUser != null && cafe.seatsAvailable != null && (
               <RetroText style={styles.metaDot}>·</RetroText>
             )}
             {cafe.seatsAvailable != null && (
@@ -149,17 +162,17 @@ export default function CafeCard({ cafe, onAddPress, editMode, onRemovePress }) 
           </RetroText>
           <View style={styles.ratingBadge}>
             <RetroText style={styles.ratingText}>
-              {cafe.rating}★
+              {rating}★
             </RetroText>
           </View>
         </View>
 
         {/* Busyness + star rating row */}
         <View style={styles.bottomRow}>
-          <BusynessBadge busyness={cafe.busyness} percent={cafe.busynessPercent} />
+          <BusynessBadge busyness={cafe.busyness} percent={busynessPercent} />
           <View style={styles.starRow}>
-            <StarRating rating={cafe.rating} />
-            <RetroText style={styles.ratingCount}>({cafe.rating_count})</RetroText>
+            <StarRating rating={rating} />
+            <RetroText style={styles.ratingCount}>({ratingCount})</RetroText>
           </View>
         </View>
 
@@ -181,7 +194,7 @@ const styles = StyleSheet.create({
     shadowOpacity: 0.08,
     shadowRadius: 10,
     elevation: 3,
-    fontFamily: 'monospace',
+    fontFamily: 'SpaceMono',
   },
   imageContainer: {
     width: '100%',
@@ -191,6 +204,17 @@ const styles = StyleSheet.create({
   image: {
     width: '100%',
     height: '100%',
+  },
+  imagePlaceholder: {
+    justifyContent: 'center',
+    alignItems: 'center',
+    backgroundColor: '#e6d6c2',
+  },
+  placeholderText: {
+    color: '#813D18',
+    fontSize: 12,
+    textAlign: 'center',
+    paddingHorizontal: 12,
   },
   imageOverlay: {
     position: 'absolute',

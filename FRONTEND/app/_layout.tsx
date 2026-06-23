@@ -10,6 +10,9 @@ export default function RootLayout() {
 
     const [loaded, error] = useFonts({
     'Funky-Vintage': require('../assets/fonts/Funky-Vintage-Regular.otf'),
+    'Anonymous': require('../assets/fonts/Anonymous.ttf'),
+    'Droid': require('../assets/fonts/DroidSansMono.ttf'),
+    'SpaceMono': require('../assets/fonts/SpaceMono-Bold.ttf'),
   });
 
     useEffect(() => {

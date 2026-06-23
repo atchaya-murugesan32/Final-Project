@@ -1,16 +1,26 @@
-import { View, Text, FlatList, StyleSheet, TouchableOpacity } from 'react-native';
+import { View, Text, FlatList, StyleSheet, TouchableOpacity, Modal, Pressable } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import CafeCard from '../../src/components/CafeCard';
 import { useCafes } from '../../src/context/CafesContext';
 import AddCafeButton from '../../src/components/AddCafeButton';
 import { useMemo, useState } from 'react';
-import { Picker } from '@react-native-picker/picker';
+
+const sortOptions = [
+  { label: 'Most recent', value: 'recent' },
+  { label: 'Rating', value: 'rating' },
+  { label: 'Distance', value: 'distance' },
+  { label: 'Busyness (%)', value: 'busyness' },
+  { label: 'Seats available', value: 'seats' },
+];
 
 export default function CafeListScreen() {
   const { cafes, removeCafe } = useCafes();
 
   const [sortMode, setSortMode] = useState('recent');
+  const [dropdownOpen, setDropdownOpen] = useState(false);
   const [editMode, setEditMode] = useState(false);
+
+  const selectedOption = sortOptions.find((option) => option.value === sortMode);
 
   const sortedCafes = useMemo(() => {
     const copy = [...cafes];
@@ -46,21 +56,15 @@ export default function CafeListScreen() {
       {/* Sort dropdown */}
       <View style={styles.sortBar}>
         <Text style={styles.sortLabel}>Sort by</Text>
-        <View style={styles.pickerWrapper}>
-          <Picker
-            selectedValue={sortMode}
-            onValueChange={(value) => setSortMode(value)}
-            dropdownIconColor="#690b22"
-            mode="dropdown"
-            style={styles.picker}
-            itemStyle={styles.pickerItem}
+        <View style={styles.dropdownWrapper}>
+          <TouchableOpacity
+            style={styles.dropdownButton}
+            onPress={() => setDropdownOpen(true)}
+            activeOpacity={0.85}
           >
-            <Picker.Item label="Most recent" value="recent" />
-            <Picker.Item label="Rating" value="rating" />
-            <Picker.Item label="Distance" value="distance" />
-            <Picker.Item label="Busyness (%)" value="busyness" />
-            <Picker.Item label="Seats available" value="seats" />
-          </Picker>
+            <Text style={styles.dropdownButtonText}>{selectedOption?.label ?? 'Select'}</Text>
+            <Ionicons name="chevron-down" size={18} color="#690b22" />
+          </TouchableOpacity>
         </View>
 
         <TouchableOpacity
@@ -78,6 +82,36 @@ export default function CafeListScreen() {
           </Text>
         </TouchableOpacity>
       </View>
+
+      <Modal
+        visible={dropdownOpen}
+        transparent
+        animationType="fade"
+        onRequestClose={() => setDropdownOpen(false)}
+      >
+        <Pressable style={styles.modalOverlay} onPress={() => setDropdownOpen(false)}>
+          <Pressable style={styles.dropdownMenu} onPress={() => {}}>
+            {sortOptions.map((option) => {
+              const active = option.value === sortMode;
+              return (
+                <TouchableOpacity
+                  key={option.value}
+                  style={[styles.dropdownItem, active && styles.dropdownItemActive]}
+                  onPress={() => {
+                    setSortMode(option.value);
+                    setDropdownOpen(false);
+                  }}
+                  activeOpacity={0.7}
+                >
+                  <Text style={[styles.dropdownItemText, active && styles.dropdownItemTextActive]}>
+                    {option.label}
+                  </Text>
+                </TouchableOpacity>
+              );
+            })}
+          </Pressable>
+        </Pressable>
+      </Modal>
 
       <FlatList
         data={sortedCafes}
@@ -115,7 +149,7 @@ const styles = StyleSheet.create({
 
   subheading: {
     fontSize: 14,
-    fontFamily: 'monospace',
+    fontFamily: 'SpaceMono',
     fontWeight: 'bold',
     color: '#690b22',
     marginBottom: 16,
@@ -136,7 +170,7 @@ const styles = StyleSheet.create({
     color: '#690b22',
   },
 
-  pickerWrapper: {
+  dropdownWrapper: {
     width: 170,
     height: 38,
     justifyContent: 'center',
@@ -144,19 +178,65 @@ const styles = StyleSheet.create({
     borderRadius: 999,
     borderWidth: 1.5,
     borderColor: '#690b22',
-    overflow: 'hidden',
     paddingHorizontal: 4,
   },
 
-  picker: {
-    color: '#690b22',
-    fontFamily: 'monospace',
+  dropdownButton: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    width: '100%',
+    height: '100%',
+    paddingHorizontal: 12,
   },
 
-  pickerItem: {
+  dropdownButtonText: {
     color: '#690b22',
     fontFamily: 'monospace',
     fontSize: 14,
+  },
+
+  modalOverlay: {
+    flex: 1,
+    backgroundColor: 'rgba(0, 0, 0, 0.25)',
+    justifyContent: 'center',
+    alignItems: 'center',
+    padding: 24,
+  },
+
+  dropdownMenu: {
+    width: '100%',
+    maxWidth: 260,
+    backgroundColor: '#FAF3DD',
+    borderRadius: 18,
+    borderWidth: 1.5,
+    borderColor: '#690b22',
+    paddingVertical: 8,
+    elevation: 6,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.15,
+    shadowRadius: 12,
+  },
+
+  dropdownItem: {
+    paddingVertical: 10,
+    paddingHorizontal: 16,
+  },
+
+  dropdownItemActive: {
+    backgroundColor: '#690b22',
+  },
+
+  dropdownItemText: {
+    color: '#690b22',
+    fontFamily: 'monospace',
+    fontSize: 14,
+  },
+
+  dropdownItemTextActive: {
+    color: '#FAF3DD',
+    fontWeight: 'bold',
   },
 
   editButton: {

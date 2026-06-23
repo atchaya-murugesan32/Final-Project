@@ -14,3 +14,5 @@ class CafeResponse(BaseModel):
     website_uri: str | None = None
     photos: list[str] = []
     opening_hours: list[str] = []
+    latitude: float | None = None
+    longitude: float | None = None
