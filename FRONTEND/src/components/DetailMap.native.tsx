@@ -1,6 +1,6 @@
-import React from 'react';
-import { StyleSheet, View } from 'react-native';
-import MapView, { Marker } from 'react-native-maps';
+import React, { useRef, useEffect } from 'react';
+import { StyleSheet, View, Text, Animated } from 'react-native';
+import MapView, { Marker, Callout } from 'react-native-maps';
 import Svg, { Path } from 'react-native-svg';
 
 // Custom retro coffee cup SVG badge marker
@@ -31,8 +31,55 @@ const CoffeeCupIcon = () => (
   </View>
 );
 
-export default function DetailMap({ latitude, longitude, name, address, mapsUri }) {
+export default function DetailMap({ latitude, longitude, name, address, mapsUri, busyness, busynessPercent }) {
   if (latitude == null || longitude == null) return null;
+
+  const percent = busynessPercent ?? (typeof busyness === 'number' ? busyness : undefined);
+  let pinColor = '#690b22';
+  if (typeof percent === 'number') {
+    if (percent < 35) pinColor = '#00A86B';
+    else if (percent < 70) pinColor = '#FFB347';
+    else pinColor = '#FF4757';
+  } else if (busyness) {
+    const label = String(busyness).toLowerCase();
+    if (label.includes('quiet') || label.includes('low')) pinColor = '#00A86B';
+    else if (label.includes('moderate') || label.includes('medium')) pinColor = '#FFB347';
+    else if (label.includes('busy') || label.includes('high')) pinColor = '#FF4757';
+  }
+
+  const busyLabel = busyness || (typeof percent === 'number' ? `${percent}%` : null);
+
+  const BUSYNESS_STYLES = {
+    Quiet:    { bg: '#E3F4ED', dot: '#1A7A5E', text: '#1A7A5E', label: 'Quiet' },
+    Moderate: { bg: '#FDF1DC', dot: '#B5760A', text: '#B5760A', label: 'Moderate' },
+    Busy:     { bg: '#FBE6E4', dot: '#C0392B', text: '#C0392B', label: 'Busy' },
+  };
+
+  function BusynessBadge({ busyness, percent }) {
+    const busy = BUSYNESS_STYLES[busyness] || null;
+    const pulse = useRef(new Animated.Value(1)).current;
+
+    useEffect(() => {
+      if (!busy) return;
+      const animation = Animated.loop(
+        Animated.sequence([
+          Animated.timing(pulse, { toValue: 1.5, duration: 900, useNativeDriver: true }),
+          Animated.timing(pulse, { toValue: 1, duration: 900, useNativeDriver: true }),
+        ])
+      );
+      animation.start();
+      return () => animation.stop();
+    }, [busy]);
+
+    if (!busy) return null;
+
+    return (
+      <View style={[styles.calloutBadge, { backgroundColor: busy.bg }]}>
+        <Animated.View style={[styles.calloutDot, { backgroundColor: busy.dot, transform: [{ scale: pulse }] }]} />
+        <Text style={[styles.calloutBadgeText, { color: busy.text }]}>{busy.label} • {percent ?? ''}%</Text>
+      </View>
+    );
+  }
 
   return (
     <View style={styles.container}>
@@ -49,8 +96,14 @@ export default function DetailMap({ latitude, longitude, name, address, mapsUri 
         pitchEnabled={false}
         rotateEnabled={false}
       >
-        <Marker coordinate={{ latitude, longitude }}>
-          <CoffeeCupIcon />
+        <Marker coordinate={{ latitude, longitude }} pinColor={pinColor}>
+          <Callout tooltip>
+            <View style={styles.callout}>
+              <Text style={styles.calloutName}>{name}</Text>
+              <Text style={styles.calloutMeta}>{address}</Text>
+              <BusynessBadge busyness={busyness} percent={percent} />
+            </View>
+          </Callout>
         </Marker>
       </MapView>
     </View>
@@ -71,5 +124,41 @@ const styles = StyleSheet.create({
     padding: 5,
     alignItems: 'center',
     justifyContent: 'center',
+  },
+  callout: {
+    backgroundColor: '#FAF3DD',
+    borderRadius: 8,
+    padding: 8,
+    borderWidth: 1.2,
+    borderColor: '#690b22',
+    minWidth: 140,
+  },
+  calloutName: {
+    fontWeight: '700',
+    color: '#690b22',
+    marginBottom: 4,
+  },
+  calloutMeta: {
+    color: '#813D18',
+    marginBottom: 4,
+  },
+  calloutBadge: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    paddingHorizontal: 10,
+    paddingVertical: 6,
+    borderRadius: 999,
+    gap: 6,
+    alignSelf: 'flex-start',
+    marginBottom: 6,
+  },
+  calloutDot: {
+    width: 8,
+    height: 8,
+    borderRadius: 4,
+  },
+  calloutBadgeText: {
+    fontSize: 12,
+    fontWeight: '600',
   },
 });

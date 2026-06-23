@@ -6,6 +6,8 @@ type DetailMapProps = {
   name: string;
   address?: string;
   mapsUri?: string;
+  busyness?: string | number;
+  busynessPercent?: number;
 };
 
 declare const DetailMap: ComponentType<DetailMapProps>;

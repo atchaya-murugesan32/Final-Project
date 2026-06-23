@@ -1,4 +1,4 @@
-import { View, Text, StyleSheet, ScrollView, Image, TouchableOpacity, Dimensions } from 'react-native';
+import { View, Text, StyleSheet, ScrollView, Image, TouchableOpacity, Dimensions, Linking } from 'react-native';
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import { mockCafes } from '../../src/data/mockCafes';
 import { useMemo } from 'react';
@@ -217,7 +217,25 @@ export default function CafeDetailScreen() {
                     <Text style={styles.labelStyle} numberOfLines={1}>{row.label}</Text>
                   </View>
                   <View style={styles.valueCell}>
-                    <Text style={styles.valueStyle}>{row.value}</Text>
+                    {row.label === 'SITE' ? (
+                      <TouchableOpacity
+                        onPress={() => {
+                          try {
+                            const raw = String(row.value || '');
+                            const url = raw.match(/^https?:\/\//i) ? raw : `https://${raw}`;
+                            Linking.openURL(url);
+                          } catch (e) {
+                            console.warn('Failed to open URL', e);
+                          }
+                        }}
+                      >
+                        <Text style={[styles.valueStyle, styles.linkStyle]} numberOfLines={1} ellipsizeMode="tail">
+                          {row.value}
+                        </Text>
+                      </TouchableOpacity>
+                    ) : (
+                      <Text style={styles.valueStyle}>{row.value}</Text>
+                    )}
                   </View>
                 </View>
               ))}
@@ -233,6 +251,8 @@ export default function CafeDetailScreen() {
             name={cafe.name}
             address={cafe.address || cafe.formattedAddress}
             mapsUri={cafe.maps_uri}
+            busyness={cafe.busyness}
+            busynessPercent={cafe.busynessPercent ?? cafe.busyness_percent}
           />
           <Text style={styles.mapPolaroidCaption}>📍 OUR LOCATION</Text>
         </View>
@@ -413,6 +433,10 @@ const styles = StyleSheet.create({
     fontSize: 13,
     color: '#4A3B32',
     lineHeight: 18,
+  },
+  linkStyle: {
+    color: '#0B66FF',
+    textDecorationLine: 'underline',
   },
   mapPolaroidFrame: {
     backgroundColor: '#f3e2d0',

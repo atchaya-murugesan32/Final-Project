@@ -2,7 +2,8 @@ import React from 'react';
 import { StyleSheet, View, Text, Linking } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 
-export default function DetailMap({ latitude, longitude, name, address, mapsUri }) {
+export default function DetailMap({ latitude, longitude, name, address, mapsUri, busyness, busynessPercent }) {
+
   const handleOpenMaps = () => {
     if (mapsUri) {
       Linking.openURL(mapsUri);
@@ -11,7 +12,6 @@ export default function DetailMap({ latitude, longitude, name, address, mapsUri 
       Linking.openURL(url);
     }
   };
-
   return (
     <View style={styles.container}>
       <View style={styles.dinerCard}>
@@ -65,4 +65,5 @@ const styles = StyleSheet.create({
     marginTop: 8,
     fontSize: 13,
   },
+  
 });

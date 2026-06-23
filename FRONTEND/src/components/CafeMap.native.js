@@ -1,5 +1,38 @@
-import { View, Text, StyleSheet } from 'react-native';
+import { View, Text, StyleSheet, Animated } from 'react-native';
+import { useEffect, useRef } from 'react';
 import MapView, { Marker, Callout, PROVIDER_DEFAULT } from 'react-native-maps';
+
+const BUSYNESS_STYLES = {
+  Quiet:    { bg: '#E3F4ED', dot: '#1A7A5E', text: '#1A7A5E', label: 'Quiet' },
+  Moderate: { bg: '#FDF1DC', dot: '#B5760A', text: '#B5760A', label: 'Moderate' },
+  Busy:     { bg: '#FBE6E4', dot: '#C0392B', text: '#C0392B', label: 'Busy' },
+};
+
+function BusynessBadge({ busyness, percent }) {
+  const busy = BUSYNESS_STYLES[busyness] || null;
+  const pulse = useRef(new Animated.Value(1)).current;
+
+  useEffect(() => {
+    if (!busy) return;
+    const animation = Animated.loop(
+      Animated.sequence([
+        Animated.timing(pulse, { toValue: 1.5, duration: 900, useNativeDriver: true }),
+        Animated.timing(pulse, { toValue: 1, duration: 900, useNativeDriver: true }),
+      ])
+    );
+    animation.start();
+    return () => animation.stop();
+  }, [busy]);
+
+  if (!busy) return null;
+
+  return (
+    <View style={[styles.busynessBadge, { backgroundColor: busy.bg }]}>
+      <Animated.View style={[styles.busynessDot, { backgroundColor: busy.dot, transform: [{ scale: pulse }] }]} />
+      <Text style={[styles.busynessText, { color: busy.text }]}>{busy.label} • {percent ?? ''}%</Text>
+    </View>
+  );
+}
 
 export default function CafeMap({ cafes, region, permissionDenied, onSelectCafe }) {
   return (
@@ -11,12 +44,26 @@ export default function CafeMap({ cafes, region, permissionDenied, onSelectCafe 
         showsUserLocation
         showsMyLocationButton
       >
-        {cafes.map((cafe) =>
-          cafe.latitude != null && cafe.longitude != null ? (
+        {cafes.map((cafe) => {
+          if (cafe.latitude == null || cafe.longitude == null) return null;
+          const percent = cafe.busynessPercent ?? cafe.busyness_percent;
+          let pinColor = '#690b22'; // default brand maroon
+          if (typeof percent === 'number') {
+            if (percent < 35) pinColor = '#00A86B'; // green for quiet
+            else if (percent < 70) pinColor = '#FFB347'; // orange for moderate
+            else pinColor = '#FF4757'; // red for busy
+          } else if (cafe.busyness) {
+            const label = String(cafe.busyness).toLowerCase();
+            if (label.includes('quiet') || label.includes('low')) pinColor = '#00A86B';
+            else if (label.includes('moderate') || label.includes('medium')) pinColor = '#FFB347';
+            else if (label.includes('busy') || label.includes('high')) pinColor = '#FF4757';
+          }
+
+          return (
             <Marker
               key={cafe.id}
               coordinate={{ latitude: cafe.latitude, longitude: cafe.longitude }}
-              pinColor="#690b22"
+              pinColor={pinColor}
             >
               {/* Tapping a pin shows this info card; tapping the card opens the cafe page */}
               <Callout tooltip onPress={() => onSelectCafe(cafe.id)}>
@@ -25,12 +72,13 @@ export default function CafeMap({ cafes, region, permissionDenied, onSelectCafe 
                   <Text style={styles.calloutMeta}>
                     {cafe.rating}★ · {cafe.distanceLabel} away
                   </Text>
+                  <BusynessBadge busyness={cafe.busyness} percent={percent} />
                   <Text style={styles.calloutLink}>View details →</Text>
                 </View>
               </Callout>
             </Marker>
-          ) : null
-        )}
+          );
+        })}
       </MapView>
 
       {/* Floating header */}
@@ -106,6 +154,37 @@ const styles = StyleSheet.create({
     fontFamily: 'monospace',
     fontWeight: 'bold',
     color: '#1A7A5E',
+  },
+  busynessBadge: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    paddingHorizontal: 10,
+    paddingVertical: 6,
+    borderRadius: 999,
+    gap: 6,
+    alignSelf: 'flex-start',
+    marginBottom: 6,
+  },
+  busynessDot: {
+    width: 8,
+    height: 8,
+    borderRadius: 4,
+  },
+  busynessText: {
+    fontSize: 12,
+    fontWeight: '600',
+  },
+  calloutBusy: {
+    fontSize: 12,
+    fontFamily: 'monospace',
+    fontWeight: '700',
+    color: '#fff',
+    backgroundColor: '#FF6B6B',
+    paddingHorizontal: 6,
+    paddingVertical: 3,
+    borderRadius: 6,
+    alignSelf: 'flex-start',
+    marginBottom: 6,
   },
   emptyOverlay: {
     position: 'absolute',
