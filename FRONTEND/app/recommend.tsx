@@ -1,10 +1,12 @@
-import { View, Text, FlatList, TouchableOpacity, StyleSheet, ScrollView } from 'react-native';
+import { View, Text, FlatList, TouchableOpacity, StyleSheet, ScrollView, TextInput } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { useRouter } from 'expo-router';
 import { useMemo, useState } from 'react';
 import CafeCard from '../src/components/CafeCard';
 import { mockCafes } from '../src/data/mockCafes';
 import { useCafes } from '../src/context/CafesContext';
+import { getUserLocation } from '../src/utils/location';
+import { searchVibe } from '../src/api/search';
 
 const VIBE_TAGS = ['Date night', 'Family brunch', 'Drinks with the girls'];
 
@@ -12,6 +14,9 @@ export default function RecommendScreen() {
   const router = useRouter();
   const { addCafe, cafes } = useCafes();
   const [activeVibe, setActiveVibe] = useState('Date night');
+  const [query, setQuery] = useState('');
+  const [results, setResults] = useState<any[]>([]);
+  const [isSearching, setIsSearching] = useState(false);
 
   // Mock "AI" recommendation: filter cafes by the selected vibe, best-rated first
   const recommendations = useMemo(() => {
@@ -20,7 +25,17 @@ export default function RecommendScreen() {
       .sort((a, b) => b.rating - a.rating);
   }, [activeVibe]);
 
-  const savedIds = useMemo(() => new Set(cafes.map((c) => c.id)), [cafes]);
+  const savedIds = useMemo(() => new Set(cafes.map((c: any) => c.id)), [cafes]);
+
+  async function handleSearchByVibe() {
+    setIsSearching(true);
+    const coords = (await getUserLocation()) ?? { latitude: 37.7765, longitude: -122.4170 };
+    const raw = await searchVibe(query, coords.latitude, coords.longitude);
+    setResults(raw);
+    setIsSearching(false);
+  }
+
+  const displayResults = isSearching ? [] : query.trim().length > 0 ? results : recommendations;
 
   return (
     <View style={styles.container}>
@@ -37,6 +52,31 @@ export default function RecommendScreen() {
 
       <Text style={styles.heading}>Picked for your vibe</Text>
       <Text style={styles.subheading}>Choose a vibe and we'll match the mood.</Text>
+
+      {/* Vibe search bar */}
+      <View style={styles.searchContainer}>
+        <Ionicons name="search-outline" size={18} color="#6c5550" style={styles.searchIcon} />
+        <TextInput
+          placeholder="Search by vibe"
+          placeholderTextColor="#690b22"
+          value={query}
+          onChangeText={setQuery}
+          onSubmitEditing={handleSearchByVibe}
+          returnKeyType="search"
+          style={styles.input}
+        />
+        {query.length > 0 && (
+          <Ionicons
+            name="close-circle"
+            size={18}
+            color="#6c5550"
+            onPress={() => {
+              setQuery('');
+              setResults([]);
+            }}
+          />
+        )}
+      </View>
 
       {/* Vibe tag filter */}
       <View style={styles.chipsContainer}>
@@ -63,19 +103,23 @@ export default function RecommendScreen() {
 
       {/* Recommendations */}
       <FlatList
-        data={recommendations}
+        data={displayResults}
         keyExtractor={(item) => item.id}
-        renderItem={({ item }) =>
-          savedIds.has(item.id) ? (
-            <CafeCard cafe={item} />
-          ) : (
-            <CafeCard cafe={item} onAddPress={() => addCafe(item)} />
-          )
-        }
+        renderItem={({ item }) => (
+          <CafeCard
+            cafe={item}
+            uiBusyness={{ busyness: item.busyness ?? 'Unknown', busynessPercent: item.busynessPercent ?? 0 }}
+            onAddPress={() => addCafe(item)}
+          />
+        )}
         ListEmptyComponent={
           <View style={styles.emptyState}>
             <Ionicons name="cafe-outline" size={48} color="#690b22" />
-            <Text style={styles.emptyText}>No matches for this vibe yet</Text>
+            <Text style={styles.emptyText}>
+              {query.trim().length > 0
+                ? 'No results for that vibe search'
+                : 'No matches for this vibe yet'}
+            </Text>
           </View>
         }
         contentContainerStyle={{ paddingVertical: 8, paddingBottom: 40 }}
@@ -127,6 +171,29 @@ const styles = StyleSheet.create({
     fontWeight: 'bold',
     color: '#690b22',
     marginBottom: 14,
+  },
+  searchContainer: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: '#FAF3DD',
+    borderRadius: 999,
+    paddingHorizontal: 14,
+    paddingVertical: 10,
+    marginBottom: 16,
+    width: '100%',
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.06,
+    shadowRadius: 8,
+    elevation: 2,
+  },
+  searchIcon: {
+    marginRight: 8,
+  },
+  input: {
+    flex: 1,
+    fontSize: 15,
+    color: '#1F2933',
   },
   chipsContainer: {
     marginBottom: 6,

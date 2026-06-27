@@ -1,8 +1,8 @@
-import { View, Text, FlatList, TextInput, StyleSheet } from 'react-native';
+import { View, Text, FlatList, TextInput, StyleSheet, ScrollView, TouchableOpacity } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import CafeCard from '../../src/components/CafeCard';
 import { useState } from 'react';
-import { searchPlaces } from '../../src/api/search';
+import { searchPlaces, searchSpecifiedPlaces } from '../../src/api/search';
 import { useCafes } from '../../src/context/CafesContext';
 import { getUserLocation } from '../../src/utils/location';
 
@@ -18,9 +18,18 @@ type Cafe = {
   totalSeats: number;
 };
 
+const CATEGORY_BUTTONS = [
+  { label: 'Cafes', query: 'cafes' },
+  { label: 'Restaurants', query: 'restaurants' },
+  { label: 'Study spaces', query: 'study spaces' },
+  { label: 'Brunch', query: 'brunch' },
+  { label: 'Bars', query: 'bars' },
+];
+
 export default function ExploreScreen() {
   const { addCafe } = useCafes();
   const [query, setQuery] = useState('');
+  const [activeCategory, setActiveCategory] = useState('');
   const [results, setResults] = useState<Cafe[]>([]);
   const [busynessMap, setBusynessMap] = useState<Record<string, { busyness: string; busynessPercent: number }>>({});
 
@@ -35,6 +44,45 @@ export default function ExploreScreen() {
   function handleAddCafe(cafe: Cafe) {
     //setResults((prev) => prev.filter((c) => c.id !== cafe.id));
     addCafe(cafe);
+  }
+
+  async function handleTextSearch() {
+    let coords = await getUserLocation();
+    if (!coords) {
+      coords = { latitude: 37.7765, longitude: -122.4170 };
+    }
+
+    const raw = await searchPlaces(query, coords.latitude, coords.longitude);
+    const newMap: Record<string, { busyness: string; busynessPercent: number }> = {};
+
+    raw.forEach((item: any) => {
+      if (!busynessMap[item.id]) {
+        newMap[item.id] = generateRandomBusyness();
+      }
+    });
+    setBusynessMap((prev) => ({ ...prev, ...newMap }));
+    setResults(raw);
+  }
+
+  async function handleCategoryPress(category: { label: string; query: string }) {
+    setActiveCategory(category.query);
+    setQuery(category.label);
+
+    let coords = await getUserLocation();
+    if (!coords) {
+      coords = { latitude: 37.7765, longitude: -122.4170 };
+    }
+
+    const raw = await searchSpecifiedPlaces(category.query, coords.latitude, coords.longitude);
+    const newMap: Record<string, { busyness: string; busynessPercent: number }> = {};
+
+    raw.forEach((item: any) => {
+      if (!busynessMap[item.id]) {
+        newMap[item.id] = generateRandomBusyness();
+      }
+    });
+    setBusynessMap((prev) => ({ ...prev, ...newMap }));
+    setResults(raw);
   }
 
   return (
@@ -53,22 +101,8 @@ export default function ExploreScreen() {
           value={query}
           onChangeText={setQuery}
           onSubmitEditing={async () => {
-            let coords = await getUserLocation();
-            // On web or when location permission denied, fall back to a sensible default
-            if (!coords) {
-              coords = { latitude: 37.7765, longitude: -122.4170 };
-            }
-            const raw = await searchPlaces(query, coords.latitude, coords.longitude);
-            // Generate display-only busyness values for UI (do not mutate the original items)
-            const newMap: Record<string, { busyness: string; busynessPercent: number }> = {};
-            raw.forEach((item: any) => {
-              // preserve any existing UI map entry
-              if (!busynessMap[item.id]) {
-                newMap[item.id] = generateRandomBusyness();
-              }
-            });
-            setBusynessMap((prev) => ({ ...prev, ...newMap }));
-            setResults(raw);
+            setActiveCategory('');
+            await handleTextSearch();
           }}
           returnKeyType="search"
           style={styles.input}
@@ -80,10 +114,35 @@ export default function ExploreScreen() {
             color="#6c5550"
             onPress={() => {
               setQuery('');
+              setActiveCategory('');
               setResults([]);
             }}
           />
         )}
+      </View>
+
+      <View style={styles.categoryRow}>
+        <ScrollView
+          horizontal
+          showsHorizontalScrollIndicator={false}
+          contentContainerStyle={styles.categoryScroll}
+        >
+          {CATEGORY_BUTTONS.map((category) => {
+            const active = category.query === activeCategory;
+            return (
+              <TouchableOpacity
+                key={category.query}
+                style={[styles.categoryButton, active && styles.categoryButtonActive]}
+                onPress={() => handleCategoryPress(category)}
+                activeOpacity={0.85}
+              >
+                <Text style={[styles.categoryButtonText, active && styles.categoryButtonTextActive]}>
+                  {category.label}
+                </Text>
+              </TouchableOpacity>
+            );
+          })}
+        </ScrollView>
       </View>
 
       {/* Results */}
@@ -163,5 +222,32 @@ const styles = StyleSheet.create({
     fontSize: 14,
     color: '#690b22',
     textAlign: 'center',
+  },
+  categoryRow: {
+    marginBottom: 18,
+  },
+  categoryScroll: {
+    gap: 10,
+    paddingRight: 8,
+  },
+  categoryButton: {
+    paddingHorizontal: 16,
+    paddingVertical: 10,
+    borderRadius: 999,
+    backgroundColor: '#FAF3DD',
+    borderWidth: 1.5,
+    borderColor: '#690b22',
+  },
+  categoryButtonActive: {
+    backgroundColor: '#690b22',
+  },
+  categoryButtonText: {
+    fontSize: 13,
+    fontFamily: 'monospace',
+    fontWeight: 'bold',
+    color: '#690b22',
+  },
+  categoryButtonTextActive: {
+    color: '#FAF3DD',
   },
 });

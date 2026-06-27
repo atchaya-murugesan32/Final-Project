@@ -62,7 +62,7 @@ function BusynessBadge({ busyness, percent}) {
   );
 }
 
-export default function CafeCard({ cafe, onAddPress, editMode, onRemovePress, uiBusyness }) {
+export default function CafeCard({ cafe, onAddPress, editMode = false, onRemovePress = undefined, uiBusyness }) {
   const router = useRouter();
   const { cafes } = useCafes();
   const added = cafes.some((item) => item.id === cafe.id);
