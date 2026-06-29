@@ -3,7 +3,7 @@ import { useRouter } from 'expo-router';
 import * as Location from 'expo-location';
 import { useCafes } from '../../src/context/CafesContext';
 import { distanceInMiles } from '../../src/utils/distance';
-import CafeMap from '../../src/components/CafeMap';
+import CafeMap from '../../src/components/maps/CafeMap';
 
 // Fallback region (downtown San Francisco) used until we have the user's location.
 const DEFAULT_REGION = {

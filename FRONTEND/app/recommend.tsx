@@ -1,10 +1,12 @@
 import { View, Text, FlatList, TouchableOpacity, StyleSheet, ScrollView } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { useRouter } from 'expo-router';
-import { useMemo, useState } from 'react';
+import { useMemo, useState, useEffect } from 'react';
 import CafeCard from '../src/components/CafeCard';
 import { mockCafes } from '../src/data/mockCafes';
 import { useCafes } from '../src/context/CafesContext';
+import AIChatBot from '../src/components/AIChatBot';
+import { getVibeRecommendation } from '../src/api/ai';
 
 const VIBE_TAGS = ['Date night', 'Family brunch', 'Drinks with the girls'];
 
@@ -22,6 +24,26 @@ export default function RecommendScreen() {
 
   const savedIds = useMemo(() => new Set(cafes.map((c) => c.id)), [cafes]);
 
+  const [aiInsight, setAiInsight] = useState('');
+  const [loadingAi, setLoadingAi] = useState(false);
+  const [chatOpen, setChatOpen] = useState(false);
+
+  useEffect(() => {
+    if (recommendations.length > 0) {
+      setLoadingAi(true);
+      setAiInsight('');
+      getVibeRecommendation(activeVibe, recommendations)
+        .then(res => setAiInsight(res.response))
+        .catch(err => {
+          console.error(err);
+          setAiInsight("I think you'll love these spots!");
+        })
+        .finally(() => setLoadingAi(false));
+    } else {
+      setAiInsight('');
+    }
+  }, [activeVibe, recommendations]);
+
   return (
     <View style={styles.container}>
       {/* Header */}
@@ -29,10 +51,10 @@ export default function RecommendScreen() {
         <TouchableOpacity onPress={() => router.back()} hitSlop={10}>
           <Ionicons name="chevron-back" size={26} color="#690b22" />
         </TouchableOpacity>
-        <View style={styles.aiBadge}>
+        <TouchableOpacity style={styles.aiBadge} onPress={() => setChatOpen(true)} activeOpacity={0.8}>
           <Ionicons name="sparkles" size={14} color="#690b22" />
           <Text style={styles.aiBadgeText}>AI Recommendation</Text>
-        </View>
+        </TouchableOpacity>
       </View>
 
       <Text style={styles.heading}>Picked for your vibe</Text>
@@ -61,6 +83,18 @@ export default function RecommendScreen() {
         </ScrollView>
       </View>
 
+      {/* AI Insight */}
+      {(loadingAi || aiInsight !== '') && (
+        <View style={styles.aiInsightContainer}>
+          <Ionicons name="sparkles" size={16} color="#690b22" style={{ marginTop: 2 }} />
+          {loadingAi ? (
+            <Text style={styles.aiInsightText}>Gemini is analyzing your vibe...</Text>
+          ) : (
+            <Text style={styles.aiInsightText}>{aiInsight}</Text>
+          )}
+        </View>
+      )}
+
       {/* Recommendations */}
       <FlatList
         data={recommendations}
@@ -80,6 +114,7 @@ export default function RecommendScreen() {
         }
         contentContainerStyle={{ paddingVertical: 8, paddingBottom: 40 }}
       />
+      <AIChatBot visible={chatOpen} onClose={() => setChatOpen(false)} />
     </View>
   );
 }
@@ -165,5 +200,22 @@ const styles = StyleSheet.create({
     fontFamily: 'monospace',
     color: '#690b22',
     textAlign: 'center',
+  },
+  aiInsightContainer: {
+    flexDirection: 'row',
+    backgroundColor: 'rgba(250, 243, 221, 0.7)',
+    padding: 12,
+    borderRadius: 12,
+    marginVertical: 10,
+    gap: 8,
+    borderWidth: 1,
+    borderColor: 'rgba(105, 11, 34, 0.2)',
+  },
+  aiInsightText: {
+    flex: 1,
+    fontSize: 14,
+    color: '#690b22',
+    lineHeight: 20,
+    fontFamily: 'monospace',
   },
 });

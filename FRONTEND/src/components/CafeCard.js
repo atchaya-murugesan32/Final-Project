@@ -1,8 +1,9 @@
-import { useEffect, useRef } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { View, Text, Image, TouchableOpacity, Animated, StyleSheet, Dimensions } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { useRouter } from 'expo-router';
 import { useCafes } from '../context/CafesContext';
+import ReservationModal from './ReservationModal';
 
 const CARD_WIDTH = Math.min(Dimensions.get('window').width - 32, 500);
 
@@ -62,10 +63,11 @@ function BusynessBadge({ busyness, percent}) {
   );
 }
 
-export default function CafeCard({ cafe, onAddPress, editMode, onRemovePress }) {
+export default function CafeCard({ cafe, onAddPress, editMode, onRemovePress, onFavoritePress, isFavorite }) {
   const router = useRouter();
   const { cafes } = useCafes();
   const added = cafes.some((item) => item.id === cafe.id);
+  const [isReservationModalVisible, setReservationModalVisible] = useState(false);
 
   function handleAdd() {
     onAddPress?.();
@@ -76,6 +78,7 @@ export default function CafeCard({ cafe, onAddPress, editMode, onRemovePress }) 
   const rating = typeof cafe.rating === 'number' ? cafe.rating : 0;
   const distanceFromUser = cafe.distance_from_user ?? cafe.distanceMi ?? null;
   const busynessPercent = cafe.busynessPercent ?? cafe.busyness_percent ?? 0;
+  const isBusy = busynessPercent >= 71;
 
   return (
     <TouchableOpacity
@@ -101,34 +104,47 @@ export default function CafeCard({ cafe, onAddPress, editMode, onRemovePress }) 
         </View>
 
         {/* Remove button — top right overlay, only in edit mode */}
-        {editMode && (
+        {editMode && onRemovePress && (
           <TouchableOpacity
             style={styles.removeButton}
             onPress={onRemovePress}
             activeOpacity={0.85}
           >
-            <Ionicons name="remove" size={20} color="#FFFFFF" />
+            <Ionicons name="trash-outline" size={20} color="#FFFFFF" />
           </TouchableOpacity>
         )}
 
-        {/* Add button — top right overlay, only when onAddPress provided */}
-        {onAddPress && (
-          <TouchableOpacity
-            style={[styles.addButton, added && styles.addButtonAdded]}
-            onPress={handleAdd}
-            activeOpacity={added ? 1 : 0.85}
-            disabled={added}
-          >
-            {added ? (
-              <>
-                <Ionicons name="checkmark" size={14} color="#FFFFFF" />
-                <RetroText style={styles.addButtonText}>Added</RetroText>
-              </>
-            ) : (
-              <Ionicons name="add" size={20} color="#FFFFFF" />
-            )}
-          </TouchableOpacity>
-        )}
+        <View style={styles.topRightActions}>
+          {/* Favorite button */}
+          {onFavoritePress && (
+            <TouchableOpacity
+              style={styles.favoriteButton}
+              onPress={() => onFavoritePress()}
+              activeOpacity={0.85}
+            >
+              <Ionicons name={isFavorite ? "heart" : "heart-outline"} size={20} color={isFavorite ? "#e91e63" : "#FFFFFF"} />
+            </TouchableOpacity>
+          )}
+
+          {/* Add button */}
+          {onAddPress && (
+            <TouchableOpacity
+              style={[styles.addButton, added && styles.addButtonAdded]}
+              onPress={handleAdd}
+              activeOpacity={added ? 1 : 0.85}
+              disabled={added}
+            >
+              {added ? (
+                <>
+                  <Ionicons name="checkmark" size={14} color="#FFFFFF" />
+                  <RetroText style={styles.addButtonText}>Added</RetroText>
+                </>
+              ) : (
+                <Ionicons name="add" size={20} color="#FFFFFF" />
+              )}
+            </TouchableOpacity>
+          )}
+        </View>
       </View>
 
       {/* Info section below image */}
@@ -176,7 +192,25 @@ export default function CafeCard({ cafe, onAddPress, editMode, onRemovePress }) 
           </View>
         </View>
 
+        <View style={styles.reserveContainer}>
+          <TouchableOpacity 
+            style={[styles.reserveButton, isBusy && styles.reserveButtonDisabled]}
+            disabled={isBusy}
+            onPress={() => setReservationModalVisible(true)}
+          >
+             <Text style={styles.reserveButtonText}>Reserve Table</Text>
+          </TouchableOpacity>
+          {isBusy && (
+            <Text style={styles.busyMessageText}>Table reservation is currently unavailable because this cafe is busy.</Text>
+          )}
+        </View>
+
       </View>
+      <ReservationModal
+         visible={isReservationModalVisible}
+         onClose={() => setReservationModalVisible(false)}
+         cafe={cafe}
+      />
     </TouchableOpacity>
   );
 }
@@ -226,15 +260,27 @@ const styles = StyleSheet.create({
     borderRadius: 8,
     maxWidth: '70%',
   },
+  topRightActions: {
+    position: 'absolute',
+    top: 10,
+    right: 10,
+    flexDirection: 'row',
+    gap: 8,
+  },
+  favoriteButton: {
+    backgroundColor: 'rgba(0, 0, 0, 0.4)',
+    width: 32,
+    height: 32,
+    borderRadius: 16,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
   overlayName: {
     color: '#FFFFFF',
     fontSize: 13,
     fontWeight: '600',
   },
   addButton: {
-    position: 'absolute',
-    top: 12,
-    right: 12,
     height: 34,
     borderRadius: 17,
     backgroundColor: '#690b22',

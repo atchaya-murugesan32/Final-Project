@@ -1,10 +1,11 @@
 import { View, Text, FlatList, TextInput, StyleSheet } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import CafeCard from '../../src/components/CafeCard';
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { searchPlaces } from '../../src/api/search';
 import { useCafes } from '../../src/context/CafesContext';
 import { getUserLocation } from '../../src/utils/location';
+import { getFavorites, addFavorite, removeFavorite } from '../../src/api/dashboard';
 
 type Cafe = {
   id: string;
@@ -22,10 +23,28 @@ export default function ExploreScreen() {
   const { addCafe } = useCafes();
   const [query, setQuery] = useState('');
   const [results, setResults] = useState<Cafe[]>([]);
+  const [error, setError] = useState<string | null>(null);
+  const [favorites, setFavorites] = useState<any[]>([]);
+
+  // Fetch favorites on mount
+  useEffect(() => {
+    getFavorites().then(setFavorites).catch(console.error);
+  }, []);
 
   function handleAddCafe(cafe: Cafe) {
-    //setResults((prev) => prev.filter((c) => c.id !== cafe.id));
     addCafe(cafe);
+  }
+
+  async function handleToggleFavorite(cafe: Cafe) {
+    const isFav = favorites.some(f => f.cafe_id === cafe.id);
+    if (isFav) {
+      setFavorites(prev => prev.filter(f => f.cafe_id !== cafe.id));
+      await removeFavorite(cafe.id).catch(console.error);
+    } else {
+      const newFav = { cafe_id: cafe.id, cafe_name: cafe.name, rating: cafe.rating, image_url: cafe.image || cafe.photos?.[0] };
+      setFavorites(prev => [...prev, newFav]);
+      await addFavorite(newFav).catch(console.error);
+    }
   }
 
   return (
@@ -42,12 +61,21 @@ export default function ExploreScreen() {
           placeholder="cozy cafe near me"
           placeholderTextColor="#690b22"
           value={query}
-          onChangeText={setQuery}
+          onChangeText={(text) => {
+            setError(null);
+            setQuery(text);
+          }}
           onSubmitEditing={async () => {
-            const coords = await getUserLocation();
-            if (!coords) return;
-            const data = await searchPlaces(query, coords.latitude, coords.longitude);
-            setResults(data);
+            setError(null);
+            try {
+              const coords = await getUserLocation();
+              if (!coords) return;
+              const data = await searchPlaces(query, coords.latitude, coords.longitude);
+              setResults(data);
+            } catch (err) {
+              setResults([]);
+              setError(err instanceof Error ? err.message : 'Search failed. Please try again.');
+            }
           }}
           returnKeyType="search"
           style={styles.input}
@@ -60,17 +88,25 @@ export default function ExploreScreen() {
             onPress={() => {
               setQuery('');
               setResults([]);
+              setError(null);
             }}
           />
         )}
       </View>
+
+      {error ? <Text style={styles.errorText}>{error}</Text> : null}
 
       {/* Results */}
       <FlatList
         data={results}
         keyExtractor={(item) => item.id}
         renderItem={({ item }) => (
-          <CafeCard cafe={item} onAddPress={() => handleAddCafe(item)} />
+          <CafeCard 
+            cafe={item} 
+            onAddPress={() => handleAddCafe(item)} 
+            isFavorite={favorites.some(f => f.cafe_id === item.id)}
+            onFavoritePress={() => handleToggleFavorite(item)}
+          />
         )}
         ListEmptyComponent={
           query.length === 0 ? (
@@ -141,6 +177,13 @@ const styles = StyleSheet.create({
   emptyText: {
     fontSize: 14,
     color: '#690b22',
+    textAlign: 'center',
+  },
+  errorText: {
+    color: '#8b0000',
+    fontSize: 14,
+    marginHorizontal: 16,
+    marginBottom: 8,
     textAlign: 'center',
   },
 });

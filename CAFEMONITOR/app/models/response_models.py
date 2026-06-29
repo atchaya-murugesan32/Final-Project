@@ -1,5 +1,5 @@
-
 from pydantic import BaseModel
+from typing import List, Optional
 
 class CafeResponse(BaseModel):
     id: str
@@ -11,8 +11,8 @@ class CafeResponse(BaseModel):
     busyness: str
     price_range: str
     maps_uri: str
-    website_uri: str | None = None
-    photos: list[str] = []
-    opening_hours: list[str] = []
-    latitude: float | None = None
-    longitude: float | None = None
+    website_uri: Optional[str] = None
+    photos: List[str] = []
+    opening_hours: List[str] = []
+    latitude: Optional[float] = None
+    longitude: Optional[float] = None
