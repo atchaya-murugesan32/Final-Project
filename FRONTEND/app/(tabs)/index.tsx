@@ -3,7 +3,8 @@ import { Ionicons } from '@expo/vector-icons';
 import CafeCard from '../../src/components/CafeCard';
 import { useCafes } from '../../src/context/CafesContext';
 import AddCafeButton from '../../src/components/AddCafeButton';
-import { useMemo, useState } from 'react';
+import { useMemo, useState, useEffect } from 'react';
+import { getFavorites, addFavorite, removeFavorite } from '../../src/api/dashboard';
 
 const sortOptions = [
   { label: 'Most recent', value: 'recent' },
@@ -19,6 +20,23 @@ export default function CafeListScreen() {
   const [sortMode, setSortMode] = useState('recent');
   const [dropdownOpen, setDropdownOpen] = useState(false);
   const [editMode, setEditMode] = useState(false);
+  const [favorites, setFavorites] = useState<any[]>([]);
+
+  useEffect(() => {
+    getFavorites().then(setFavorites).catch(console.error);
+  }, []);
+
+  async function handleToggleFavorite(cafe: any) {
+    const isFav = favorites.some(f => f.cafe_id === cafe.id);
+    if (isFav) {
+      setFavorites(prev => prev.filter(f => f.cafe_id !== cafe.id));
+      await removeFavorite(cafe.id).catch(console.error);
+    } else {
+      const newFav = { cafe_id: cafe.id, cafe_name: cafe.name, rating: cafe.rating, image_url: cafe.image || cafe.photos?.[0] };
+      setFavorites(prev => [...prev, newFav]);
+      await addFavorite(newFav).catch(console.error);
+    }
+  }
 
   const selectedOption = sortOptions.find((option) => option.value === sortMode);
 
@@ -121,6 +139,8 @@ export default function CafeListScreen() {
             cafe={item}
             editMode={editMode}
             onRemovePress={() => removeCafe(item.id)}
+            isFavorite={favorites.some(f => f.cafe_id === item.id)}
+            onFavoritePress={() => handleToggleFavorite(item)}
           />
         )}
         contentContainerStyle={{ paddingVertical: 8 }}

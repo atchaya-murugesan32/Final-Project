@@ -1,21 +1,23 @@
 import { View, Text, FlatList, TextInput, StyleSheet, ScrollView, TouchableOpacity } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import CafeCard from '../../src/components/CafeCard';
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { searchPlaces, searchSpecifiedPlaces } from '../../src/api/search';
 import { useCafes } from '../../src/context/CafesContext';
 import { getUserLocation } from '../../src/utils/location';
+import { getFavorites, addFavorite, removeFavorite } from '../../src/api/dashboard';
 
 type Cafe = {
   id: string;
   name: string;
-  image: string;
+  image?: string;
+  photos?: string[];
   rating: number;
   ratingCount: number;
-  busyness: string;
-  distance: string;
-  seatsAvailable: number;
-  totalSeats: number;
+  busyness?: string;
+  distance?: string;
+  seatsAvailable?: number;
+  totalSeats?: number;
 };
 
 const CATEGORY_BUTTONS = [
@@ -31,18 +33,15 @@ export default function ExploreScreen() {
   const [query, setQuery] = useState('');
   const [activeCategory, setActiveCategory] = useState('');
   const [results, setResults] = useState<Cafe[]>([]);
-  const [busynessMap, setBusynessMap] = useState<Record<string, { busyness: string; busynessPercent: number }>>({});
+  const [error, setError] = useState<string | null>(null);
+  const [favorites, setFavorites] = useState<any[]>([]);
 
-  function generateRandomBusyness() {
-    const percent = Math.floor(Math.random() * 86) + 5; // 5 - 90
-    let label = 'Moderate';
-    if (percent < 35) label = 'Quiet';
-    else if (percent >= 70) label = 'Busy';
-    return { busyness: label, busynessPercent: percent };
-  }
+  // Fetch favorites on mount
+  useEffect(() => {
+    getFavorites().then(setFavorites).catch(console.error);
+  }, []);
 
   function handleAddCafe(cafe: Cafe) {
-    //setResults((prev) => prev.filter((c) => c.id !== cafe.id));
     addCafe(cafe);
   }
 
@@ -52,16 +51,14 @@ export default function ExploreScreen() {
       coords = { latitude: 37.7765, longitude: -122.4170 };
     }
 
-    const raw = await searchPlaces(query, coords.latitude, coords.longitude);
-    const newMap: Record<string, { busyness: string; busynessPercent: number }> = {};
-
-    raw.forEach((item: any) => {
-      if (!busynessMap[item.id]) {
-        newMap[item.id] = generateRandomBusyness();
-      }
-    });
-    setBusynessMap((prev) => ({ ...prev, ...newMap }));
-    setResults(raw);
+    try {
+      const raw = await searchPlaces(query, coords.latitude, coords.longitude);
+      setResults(raw);
+      setError(null);
+    } catch (err) {
+      setResults([]);
+      setError(err instanceof Error ? err.message : 'Search failed. Please try again.');
+    }
   }
 
   async function handleCategoryPress(category: { label: string; query: string }) {
@@ -73,16 +70,26 @@ export default function ExploreScreen() {
       coords = { latitude: 37.7765, longitude: -122.4170 };
     }
 
-    const raw = await searchSpecifiedPlaces(category.query, coords.latitude, coords.longitude);
-    const newMap: Record<string, { busyness: string; busynessPercent: number }> = {};
+    try {
+      const raw = await searchSpecifiedPlaces(category.query, coords.latitude, coords.longitude);
+      setResults(raw);
+      setError(null);
+    } catch (err) {
+      setResults([]);
+      setError(err instanceof Error ? err.message : 'Category search failed. Please try again.');
+    }
+  }
 
-    raw.forEach((item: any) => {
-      if (!busynessMap[item.id]) {
-        newMap[item.id] = generateRandomBusyness();
-      }
-    });
-    setBusynessMap((prev) => ({ ...prev, ...newMap }));
-    setResults(raw);
+  async function handleToggleFavorite(cafe: Cafe) {
+    const isFav = favorites.some(f => f.cafe_id === cafe.id);
+    if (isFav) {
+      setFavorites(prev => prev.filter(f => f.cafe_id !== cafe.id));
+      await removeFavorite(cafe.id).catch(console.error);
+    } else {
+      const newFav = { cafe_id: cafe.id, cafe_name: cafe.name, rating: cafe.rating, image_url: cafe.image || cafe.photos?.[0] };
+      setFavorites(prev => [...prev, newFav]);
+      await addFavorite(newFav).catch(console.error);
+    }
   }
 
   return (
@@ -99,7 +106,10 @@ export default function ExploreScreen() {
           placeholder="cozy cafe near me"
           placeholderTextColor="#690b22"
           value={query}
-          onChangeText={setQuery}
+          onChangeText={(text) => {
+            setError(null);
+            setQuery(text);
+          }}
           onSubmitEditing={async () => {
             setActiveCategory('');
             await handleTextSearch();
@@ -116,6 +126,7 @@ export default function ExploreScreen() {
               setQuery('');
               setActiveCategory('');
               setResults([]);
+              setError(null);
             }}
           />
         )}
@@ -143,14 +154,21 @@ export default function ExploreScreen() {
             );
           })}
         </ScrollView>
-      </View>
+          </View>
+
+      {error ? <Text style={styles.errorText}>{error}</Text> : null}
 
       {/* Results */}
       <FlatList
         data={results}
         keyExtractor={(item) => item.id}
         renderItem={({ item }) => (
-          <CafeCard cafe={item} uiBusyness={busynessMap[item.id]} onAddPress={() => handleAddCafe(item)} />
+          <CafeCard 
+            cafe={item} 
+            onAddPress={() => handleAddCafe(item)} 
+            isFavorite={favorites.some(f => f.cafe_id === item.id)}
+            onFavoritePress={() => handleToggleFavorite(item)}
+          />
         )}
         ListEmptyComponent={
           query.length === 0 ? (
@@ -249,5 +267,13 @@ const styles = StyleSheet.create({
   },
   categoryButtonTextActive: {
     color: '#FAF3DD',
+  },
+
+  errorText: {
+    color: '#8b0000',
+    fontSize: 14,
+    marginHorizontal: 16,
+    marginBottom: 8,
+    textAlign: 'center',
   },
 });

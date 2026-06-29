@@ -3,7 +3,7 @@ import { useLocalSearchParams, useRouter } from 'expo-router';
 import { mockCafes } from '../../src/data/mockCafes';
 import { useMemo } from 'react';
 import { useCafes } from '../../src/context/CafesContext';
-import DetailMap from '../../src/components/DetailMap';
+import DetailMap from '../../src/components/maps/DetailMap';
 import Svg, { Path, Circle, Rect, G } from 'react-native-svg';
 import { Ionicons } from '@expo/vector-icons';
 
