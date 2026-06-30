@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+﻿import React, { useState } from 'react';
 import {
   View,
   Text,
@@ -11,7 +11,6 @@ import {
 } from 'react-native';
 import { useRouter } from 'expo-router';
 import { useAuth } from '../../src/context/AuthContext';
-import { LinearGradient } from 'expo-linear-gradient';
 import Animated, { FadeInDown, FadeInUp } from 'react-native-reanimated';
 
 export default function RegisterScreen() {
@@ -41,14 +40,14 @@ export default function RegisterScreen() {
   };
 
   return (
-    <LinearGradient colors={['#e8d7be', '#a58e1e']} style={styles.container}>
+    <View style={styles.container}>
       <KeyboardAvoidingView
         behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
         style={styles.innerContainer}
       >
         <Animated.View entering={FadeInDown.duration(600).springify()}>
           <Text style={styles.title}>Join Us</Text>
-          <Text style={styles.subtitle}>Create an account to start saving cafés.</Text>
+          <Text style={styles.subtitle}>Create an account to start saving cafes.</Text>
         </Animated.View>
 
         <Animated.View entering={FadeInUp.delay(200).duration(600).springify()} style={styles.formContainer}>
@@ -102,13 +101,14 @@ export default function RegisterScreen() {
           </View>
         </Animated.View>
       </KeyboardAvoidingView>
-    </LinearGradient>
+    </View>
   );
 }
 
 const styles = StyleSheet.create({
   container: {
     flex: 1,
+    backgroundColor: '#ffedd1',
   },
   innerContainer: {
     flex: 1,
@@ -129,7 +129,7 @@ const styles = StyleSheet.create({
     marginBottom: 40,
   },
   formContainer: {
-    backgroundColor: 'rgba(250, 243, 221, 0.4)',
+    backgroundColor: 'rgba(164, 182, 29, 0.58)',
     padding: 24,
     borderRadius: 24,
     borderWidth: 1,
@@ -144,12 +144,12 @@ const styles = StyleSheet.create({
     borderRadius: 12,
     fontSize: 16,
     color: '#690b22',
-    fontFamily: 'monospace',
+    fontFamily: 'SpaceMono',
   },
   error: {
     color: '#cc0000',
     marginBottom: 16,
-    fontFamily: 'monospace',
+    fontFamily: 'SpaceMono',
     textAlign: 'center',
   },
   primaryButton: {
@@ -169,7 +169,7 @@ const styles = StyleSheet.create({
     color: '#FAF3DD',
     fontSize: 18,
     fontWeight: 'bold',
-    fontFamily: 'monospace',
+    fontFamily: 'SpaceMono',
   },
   footer: {
     flexDirection: 'row',
@@ -180,11 +180,12 @@ const styles = StyleSheet.create({
   },
   footerText: {
     color: '#4f2f1d',
-    fontFamily: 'monospace',
+    fontFamily: 'SpaceMono',
   },
   linkText: {
     color: '#690b22',
     fontWeight: 'bold',
-    fontFamily: 'monospace',
+    fontFamily: 'SpaceMono',
   },
 });
+

@@ -1,6 +1,5 @@
 import React, { useState, useCallback } from 'react';
 import { View, Text, ScrollView, StyleSheet, ActivityIndicator, RefreshControl, TouchableOpacity, Dimensions } from 'react-native';
-import { LinearGradient } from 'expo-linear-gradient';
 import Animated, { FadeInDown } from 'react-native-reanimated';
 import { useFocusEffect, router } from 'expo-router';
 import AsyncStorage from '@react-native-async-storage/async-storage';
@@ -27,6 +26,16 @@ import {
 
 const { width } = Dimensions.get('window');
 
+function getErrorMessage(error: unknown) {
+  return error instanceof Error ? error.message : String(error);
+}
+
+type AuthContextValue = {
+  token: string | null;
+  loading: boolean;
+  signOut: () => Promise<void>;
+};
+
 export default function AccountScreen() {
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
@@ -39,10 +48,19 @@ export default function AccountScreen() {
   const [activity, setActivity] = useState([]);
   const [aiHistory, setAiHistory] = useState([]);
 
-  const [error, setError] = useState(null);
-  const { signOut } = useAuth();
+  const [error, setError] = useState<string | null>(null);
+  const auth = useAuth() as AuthContextValue | null;
+  const token = auth?.token ?? null;
+  const authLoading = auth?.loading ?? false;
+  const signOut = auth?.signOut;
 
   const fetchData = async () => {
+    if (!token) {
+      setLoading(false);
+      setRefreshing(false);
+      return;
+    }
+
     try {
       setError(null);
       const [profRes, statsRes, favRes, prefRes, notifRes, actRes, aiRes] = await Promise.all([
@@ -61,9 +79,9 @@ export default function AccountScreen() {
       setNotifications(notifRes);
       setActivity(actRes);
       setAiHistory(aiRes);
-    } catch (e) {
-      console.error("Dashboard Error:", e);
-      setError("Failed to load dashboard data. Error: " + (e.message || String(e)));
+    } catch (error) {
+      console.error("Dashboard Error:", error);
+      setError("Failed to load dashboard data. Error: " + getErrorMessage(error));
     } finally {
       setLoading(false);
       setRefreshing(false);
@@ -72,8 +90,13 @@ export default function AccountScreen() {
 
   useFocusEffect(
     useCallback(() => {
+      if (authLoading) {
+        return undefined;
+      }
+
       fetchData();
-    }, [])
+      return undefined;
+    }, [authLoading, token])
   );
 
   const onRefresh = () => {
@@ -83,7 +106,11 @@ export default function AccountScreen() {
 
   const handleLogout = async () => {
     try {
-      await signOut();
+      if (signOut) {
+        await signOut();
+      } else {
+        await AsyncStorage.removeItem('userToken');
+      }
       router.replace('/auth/login');
     } catch (e) {
       await AsyncStorage.removeItem('userToken');
@@ -93,7 +120,7 @@ export default function AccountScreen() {
 
   if (error) {
     return (
-      <LinearGradient colors={['#a58e1ed2', '#e8d7be']} style={styles.loadingContainer}>
+      <View style={styles.loadingContainer}>
         <Text style={styles.errorText}>{error}</Text>
         <TouchableOpacity 
           style={styles.logoutBtn}
@@ -101,23 +128,20 @@ export default function AccountScreen() {
         >
           <Text style={styles.logoutBtnText}>Sign Out / Try Again</Text>
         </TouchableOpacity>
-      </LinearGradient>
+      </View>
     );
   }
 
   if (loading && !refreshing) {
     return (
-      <LinearGradient colors={['#a58e1ed2', '#e8d7be']} style={styles.loadingContainer}>
-        <ActivityIndicator size="large" color="#690b22" />
-      </LinearGradient>
+      <View style={styles.loadingContainer}>
+        <ActivityIndicator size="large" color="#E4CAAA" />
+      </View>
     );
   }
 
   return (
-    <LinearGradient colors={['#fdfbfb', '#ebedee', '#fdfbfb']} style={styles.container}>
-      <View style={styles.bgCircle1} />
-      <View style={styles.bgCircle2} />
-
+    <View style={styles.container}>
       <ScrollView 
         contentContainerStyle={styles.scrollContent}
         refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} />}
@@ -142,86 +166,77 @@ export default function AccountScreen() {
           
         </Animated.View>
       </ScrollView>
-    </LinearGradient>
+    </View>
   );
 }
 
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    position: 'relative',
-  },
-  bgCircle1: {
-    position: 'absolute',
-    top: -100,
-    right: -50,
-    width: 300,
-    height: 300,
-    borderRadius: 150,
-    backgroundColor: 'rgba(165, 142, 30, 0.1)',
-  },
-  bgCircle2: {
-    position: 'absolute',
-    top: 400,
-    left: -100,
-    width: 400,
-    height: 400,
-    borderRadius: 200,
-    backgroundColor: 'rgba(105, 11, 34, 0.05)',
+    backgroundColor: '#C08831',
   },
   loadingContainer: {
     flex: 1,
     justifyContent: 'center',
     alignItems: 'center',
     padding: 20,
+    backgroundColor: '#C08831',
   },
   scrollContent: {
-    padding: 20,
-    paddingTop: 60,
+    padding: 16,
+    paddingTop: 8,
     paddingBottom: 40,
   },
   headerTitle: {
-    fontSize: 34,
-    fontWeight: '900',
-    color: '#1a1a1a',
-    marginBottom: 24,
-    letterSpacing: -1,
+    fontSize: 65,
+    fontWeight: 'bold',
+    fontFamily: 'Funky-Vintage',
+    color: '#E4CAAA',
+    marginTop: 8,
+    marginBottom: 16,
+    textAlign: 'center',
   },
   errorText: {
-    color: '#690b22',
-    fontSize: 16,
+    color: '#E4CAAA',
+    fontSize: 20,
+    fontFamily: 'SpaceMono',
     fontWeight: 'bold',
     textAlign: 'center',
     marginBottom: 20,
   },
   logoutBtn: {
     marginTop: 20,
-    padding: 12,
-    backgroundColor: '#690b22',
-    borderRadius: 8,
+    paddingVertical: 12,
+    paddingHorizontal: 18,
+    backgroundColor: '#FAF3DD',
+    borderRadius: 999,
+    borderWidth: 1.5,
+    borderColor: '#35545ad7',
   },
   logoutBtnText: {
-    color: 'white',
+    color: '#35545ad7',
     fontWeight: 'bold',
+    fontFamily: 'SpaceMono',
   },
   logoutButtonFinal: {
-    backgroundColor: '#fff',
-    borderWidth: 1,
-    borderColor: '#e11d48',
+    backgroundColor: '#FAF3DD',
+    borderWidth: 1.5,
+    borderColor: '#35545ad7',
     padding: 16,
-    borderRadius: 16,
+    borderRadius: 999,
     alignItems: 'center',
-    marginTop: 10,
+    marginTop: 12,
     marginBottom: 40,
-    shadowColor: '#e11d48',
+    shadowColor: '#35545ad7',
     shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.1,
+    shadowOpacity: 0.15,
     shadowRadius: 10,
     elevation: 2,
   },
   logoutButtonFinalText: {
-    color: '#e11d48',
-    fontSize: 16,
+    color: '#35545ad7',
+    fontSize: 15,
     fontWeight: 'bold',
+    fontFamily: 'SpaceMono',
   }
 });

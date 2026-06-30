@@ -48,11 +48,10 @@
       ]
     ],
     "experiments": {
-      "typedRoutes": true,
-      "reactCompiler": true
+      "typedRoutes": true
     },
     "extra": {
-      "apiUrl": "http://192.168.1.19:8000"
+      "apiUrl": "http://127.0.0.1:8000"
     }
   }
 }

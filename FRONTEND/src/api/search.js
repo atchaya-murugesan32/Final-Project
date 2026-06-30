@@ -1,22 +1,5 @@
-import { Platform } from 'react-native';
-import Constants from 'expo-constants';
 import { mockCafes } from '../../src/data/mockCafes';
-
-const getApiBaseUrl = () => {
-  if (Constants.expoConfig?.extra?.apiUrl) {
-    return Constants.expoConfig.extra.apiUrl;
-  }
-
-  if (Platform.OS === 'android') {
-    return 'http://10.0.2.2:8000';
-  }
-
-  if (Platform.OS === 'web') {
-    return 'http://127.0.0.1:8000';
-  }
-
-  return 'http://127.0.0.1:8000';
-};
+import { getApiBaseUrl } from './baseUrl';
 
 function normalizeBusyness(item) {
   const copy = { ...item };

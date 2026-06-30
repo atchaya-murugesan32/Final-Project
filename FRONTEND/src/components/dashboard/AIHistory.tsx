@@ -14,7 +14,7 @@ export default function AIHistory({ history }) {
           <Animated.View key={item.id} entering={FadeInUp.delay(index * 100)}>
             <TouchableOpacity style={styles.card}>
               <View style={styles.iconContainer}>
-                <Ionicons name="search-outline" size={16} color="#690b22" />
+                <Ionicons name="search-outline" size={16} color="#35545ad7" />
               </View>
               <View style={styles.content}>
                 <Text style={styles.queryText} numberOfLines={1}>{item.query}</Text>
@@ -40,6 +40,7 @@ const styles = StyleSheet.create({
     marginBottom: 16,
     paddingHorizontal: 4,
     letterSpacing: -0.5,
+    fontFamily: 'SpaceMono',
   },
   list: {
     gap: 12,
@@ -47,11 +48,11 @@ const styles = StyleSheet.create({
   card: {
     flexDirection: 'row',
     alignItems: 'center',
-    backgroundColor: 'rgba(255,255,255,0.7)',
+    backgroundColor: '#FAF3DD',
     borderRadius: 16,
     padding: 16,
     borderWidth: 1,
-    borderColor: 'rgba(255,255,255,0.8)',
+    borderColor: '#35545ad7',
     shadowColor: '#000',
     shadowOffset: { width: 0, height: 2 },
     shadowOpacity: 0.05,
@@ -62,7 +63,7 @@ const styles = StyleSheet.create({
     width: 32,
     height: 32,
     borderRadius: 16,
-    backgroundColor: 'rgba(105, 11, 34, 0.1)',
+    backgroundColor: 'rgba(53, 84, 90, 0.15)',
     justifyContent: 'center',
     alignItems: 'center',
     marginRight: 12,
@@ -75,9 +76,11 @@ const styles = StyleSheet.create({
     fontWeight: '600',
     color: '#1a1a1a',
     marginBottom: 2,
+    fontFamily: 'SpaceMono',
   },
   timeText: {
     fontSize: 12,
     color: '#888',
+    fontFamily: 'SpaceMono',
   }
 });

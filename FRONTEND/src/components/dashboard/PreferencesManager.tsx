@@ -35,8 +35,8 @@ export default function PreferencesManager({ preferences, onRefresh }) {
     <View style={styles.row}>
       <Text style={styles.label}>{label}</Text>
       <Switch
-        trackColor={{ false: "#d1d5db", true: "#fbcfe8" }}
-        thumbColor={localPrefs[field] ? "#690b22" : "#f4f3f4"}
+        trackColor={{ false: "#d1d5db", true: "#35545ad7" }}
+        thumbColor={localPrefs[field] ? "#35545ad7" : "#f4f3f4"}
         onValueChange={() => toggleSwitch(field)}
         value={localPrefs[field]}
         disabled={saving}
@@ -48,7 +48,7 @@ export default function PreferencesManager({ preferences, onRefresh }) {
     <View style={styles.container}>
       <View style={styles.header}>
         <Text style={styles.sectionTitle}>Saved Preferences</Text>
-        {saving && <ActivityIndicator size="small" color="#690b22" />}
+        {saving && <ActivityIndicator size="small" color="#35545ad7" />}
       </View>
       <View style={styles.card}>
         <PreferenceRow label="Wi-Fi Required" field="wifi_required" />
@@ -90,13 +90,14 @@ const styles = StyleSheet.create({
     fontWeight: '800',
     color: '#1a1a1a',
     letterSpacing: -0.5,
+    fontFamily: 'SpaceMono',
   },
   card: {
-    backgroundColor: 'rgba(255,255,255,0.7)',
+    backgroundColor: '#FAF3DD',
     borderRadius: 20,
     padding: 16,
     borderWidth: 1,
-    borderColor: 'rgba(255,255,255,0.8)',
+    borderColor: '#35545ad7',
     shadowColor: '#000',
     shadowOffset: { width: 0, height: 4 },
     shadowOpacity: 0.05,
@@ -119,11 +120,13 @@ const styles = StyleSheet.create({
     fontSize: 16,
     color: '#333',
     fontWeight: '500',
+    fontFamily: 'SpaceMono',
   },
   valueText: {
     fontSize: 16,
-    color: '#690b22',
+    color: '#35545ad7',
     fontWeight: '700',
+    fontFamily: 'SpaceMono',
   },
   divider: {
     height: 1,

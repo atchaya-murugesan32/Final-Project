@@ -1,6 +1,5 @@
 from app.models.response_models import CafeResponse
-from app.services.google_places import get_cafes, get_places_by_type, get_place_details, get_nearby_places
-from app.services.distance import calculate_distance
+from app.services.google_places import get_cafes, get_places_by_type, get_nearby_places
 from app.services.semantic_search import semantic_search
 
 from app.config.settings import settings
@@ -8,7 +7,7 @@ from app.config.settings import settings
 #TO ADD function which gets nearby eateries based on radius
 #for each place, embed its review summary and make a dict of placeid: embedding
 #embed user query and find most similar with cosine similairity
-#return the top 5 places with their details and photos
+#return the top 5 places with their search data and photos
 
 def get_recommendations_by_vibe(lat: float, lng: float, radius: float = 5000.0, user_query: str = ''):
     places = get_nearby_places(lat=lat, lng=lng, radius=radius)
@@ -60,11 +59,8 @@ def create_responses(places: list, lat: float, lng: float) -> list:
         display_name = place.get("displayName", {})
         name = display_name.get("text", "Unknown")
 
-        # extract photo names and build URLs
+        # Use only the photos returned by the search response.
         photos = place.get("photos", [])
-        if not photos:
-            details = get_place_details(place.get("id", ""))
-            photos = details.get("photos", [])
 
         fallback_images = [
             "https://images.unsplash.com/photo-1501339847302-ac426a4a7cbb?auto=format&fit=crop&w=600&q=80",
@@ -107,22 +103,22 @@ def create_responses(places: list, lat: float, lng: float) -> list:
         lat_location = location.get("latitude", 0.0)
         lng_location = location.get("longitude", 0.0)
 
-        distance_kilometers = calculate_distance(lat, lng, lat_location, lng_location)  # Placeholder for actual user location
-
-
-
         recommendations.append(
             CafeResponse(
                 id=place.get("id", ""),
                 name=name,
                 address=place.get("formattedAddress", "Unknown"),
-                distance_from_user=distance_kilometers,
+                distance_from_user=None,
                 rating=place.get("rating", 0.0),
                 rating_count=place.get("userRatingCount", 0),
                 busyness="Unknown",
                 price_range=price_range,
                 maps_uri=place.get("googleMapsUri", ""),
                 website_uri=place.get("websiteUri"),
+                editorial_summary=(
+                    place.get("editorialSummary", {}).get("text")
+                    or place.get("reviewSummary", {}).get("text", {}).get("text")
+                ),
                 photos=photo_urls,
                 opening_hours=opening_hours,
                 latitude=lat_location,

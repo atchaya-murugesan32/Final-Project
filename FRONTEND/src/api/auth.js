@@ -1,21 +1,5 @@
-import { Platform } from 'react-native';
-import Constants from 'expo-constants';
-
-export const getApiBaseUrl = () => {
-  if (Constants.expoConfig?.extra?.apiUrl) {
-    return Constants.expoConfig.extra.apiUrl;
-  }
-
-  if (Platform.OS === 'android') {
-    return 'http://10.0.2.2:8000';
-  }
-
-  if (Platform.OS === 'web') {
-    return 'http://localhost:8000';
-  }
-
-  return 'http://localhost:8000';
-};
+export { getApiBaseUrl } from './baseUrl';
+import { getApiBaseUrl } from './baseUrl';
 
 const buildUrl = (path) => `${getApiBaseUrl()}${path}`;
 

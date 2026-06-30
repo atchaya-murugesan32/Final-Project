@@ -1,4 +1,4 @@
-import React, { useState, useRef, useEffect } from 'react';
+﻿import React, { useState, useRef, useEffect } from 'react';
 import {
   View,
   Text,
@@ -22,7 +22,7 @@ import { useAuth } from '../context/AuthContext';
 export default function AIChatBot({ visible, onClose }) {
   const { token } = useAuth();
   const [messages, setMessages] = useState([
-    { id: '1', role: 'model', parts: ['Hi there! I am your AI Cafe Assistant. ☕ How can I help you find the perfect vibe today?'] }
+    { id: '1', role: 'model', parts: ['Hi there! I am your AI Cafe Assistant. â˜• How can I help you find the perfect vibe today?'] }
   ]);
   const [inputText, setInputText] = useState('');
   const [isLoading, setIsLoading] = useState(false);
@@ -247,7 +247,7 @@ const styles = StyleSheet.create({
     color: '#FAF3DD',
     fontSize: 18,
     fontWeight: 'bold',
-    fontFamily: 'monospace',
+    fontFamily: 'SpaceMono',
   },
   chatList: {
     padding: 16,
@@ -326,3 +326,4 @@ const styles = StyleSheet.create({
     alignItems: 'center',
   },
 });
+

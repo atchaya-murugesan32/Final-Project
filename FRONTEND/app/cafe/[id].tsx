@@ -86,7 +86,7 @@ export default function CafeDetailScreen() {
         console.error("Error parsing cafeData:", e);
       }
     }
-    return mockCafes.find((c) => c.id === id) || cafes?.find((c) => c.id === id);
+    return mockCafes.find((c: any) => c.id === id) || cafes?.find((c: any) => c.id === id);
   }, [id, cafeData, cafes]);
 
   // Extract photos list
@@ -119,6 +119,20 @@ export default function CafeDetailScreen() {
       `${((nameSeed * 7 + 2) % 9) - 4}deg`,
       `${((nameSeed * 11 + 5) % 9) - 4}deg`,
     ];
+  }, [cafe]);
+
+  const editorialSummaryText = useMemo(() => {
+    if (!cafe) return '';
+
+    const raw =
+      cafe.editorial_summary ??
+      cafe.review_summary ??
+      cafe.reviewSummary?.text?.text ??
+      cafe.reviewSummary?.text ??
+      cafe.editorialSummary?.text ??
+      cafe.editorialSummary;
+
+    return typeof raw === 'string' ? raw.trim() : '';
   }, [cafe]);
 
   // Create fields mapping for the diner notepad card
@@ -160,7 +174,6 @@ export default function CafeDetailScreen() {
         source={require('../../assets/images/noise_overlay.png')}
         style={styles.noiseOverlay}
         resizeMode="repeat"
-        pointerEvents="none"
       />
 
       {/* Floating navigation header */}
@@ -175,6 +188,9 @@ export default function CafeDetailScreen() {
         {/* Large Diner Sign Header */}
 
           <Text style={styles.dinerSignText}>{cafe.name}</Text>
+          <Text style={styles.editorialSummaryText}>
+            "{editorialSummaryText || 'No editorial summary available yet.'}"
+          </Text>
        
 
         {/* Scattered overlapping polaroids */}
@@ -280,7 +296,7 @@ const styles = StyleSheet.create({
     alignItems: 'center',
   },
   errorText: {
-    fontFamily: 'Droid',
+    fontFamily: 'SpaceMono',
     fontSize: 16,
     color: '#690b22',
   },
@@ -306,7 +322,7 @@ const styles = StyleSheet.create({
   navTitle: {
     flex: 1,
     marginLeft: 12,
-    fontFamily: 'Anonymous',
+    fontFamily: 'SpaceMono',
     fontSize: 14,
     color: '#f3e2d0',
     letterSpacing: 1.2,
@@ -322,7 +338,18 @@ const styles = StyleSheet.create({
     color: '#f3e2d0',
     textAlign: 'center',
     letterSpacing: 1,
-    paddingBottom: 50,
+    marginBottom: 8,
+  },
+  editorialSummaryText: {
+    marginHorizontal: 24,
+    marginBottom: 34,
+    fontFamily: 'SpaceMono',
+    fontSize: 14,
+    lineHeight: 20,
+    color: '#f3e2d0',
+    textAlign: 'center',
+    fontStyle: 'italic',
+    opacity: 0.95,
   },
   polaroidContainer: {
     paddingHorizontal: 16,
@@ -349,7 +376,7 @@ const styles = StyleSheet.create({
     borderRadius: 1,
   },
   polaroidCaption: {
-    fontFamily: 'Droid',
+    fontFamily: 'SpaceMono',
     fontSize: 14,
     color: '#813D18',
     textAlign: 'center',
@@ -423,13 +450,13 @@ const styles = StyleSheet.create({
     paddingVertical: 6,
   },
   labelStyle: {
-    fontFamily: 'Droid',
+    fontFamily: 'SpaceMono',
     fontSize: 11,
     color: '#D9534F', // Margin color for index numbers / labels
     fontWeight: 'bold',
   },
   valueStyle: {
-    fontFamily: 'Droid',
+    fontFamily: 'SpaceMono',
     fontSize: 13,
     color: '#4A3B32',
     lineHeight: 18,
@@ -452,7 +479,7 @@ const styles = StyleSheet.create({
     marginBottom: 20,
   },
   mapPolaroidCaption: {
-    fontFamily: 'Droid',
+    fontFamily: 'SpaceMono',
     fontSize: 12,
     color: '#813D18',
     textAlign: 'center',

@@ -18,8 +18,8 @@ function InitialLayout() {
     const inAuthGroup = segments[0] === 'auth';
 
     if (!token && !inAuthGroup) {
-      // Redirect to the login page
-      router.replace('/auth/login');
+      // Redirect to the splash screen before showing login.
+      router.replace('/auth/splash' as any);
     } else if (token && inAuthGroup) {
       // Redirect away from the login page
       router.replace('/(tabs)');
@@ -30,7 +30,6 @@ function InitialLayout() {
     <Stack>
       <Stack.Screen name="(tabs)" options={{ headerShown: false }} />
       <Stack.Screen name="recommend" options={{ headerShown: false, presentation: 'modal' }} />
-      <Stack.Screen name="auth" options={{ headerShown: false }} />
     </Stack>
   );
 }

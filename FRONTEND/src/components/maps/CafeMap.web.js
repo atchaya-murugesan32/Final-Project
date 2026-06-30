@@ -1,4 +1,4 @@
-import { View, Text, FlatList, TouchableOpacity, StyleSheet } from 'react-native';
+﻿import { View, Text, FlatList, TouchableOpacity, StyleSheet } from 'react-native';
 
 const BUSYNESS_STYLES = {
   Quiet:    { bg: '#E3F4ED', dot: '#1A7A5E', text: '#1A7A5E', label: 'Quiet' },
@@ -16,12 +16,12 @@ function BusynessBadgeWeb({ busyness, percent }) {
   return (
     <View style={[styles.busynessBadge, { backgroundColor: bg }]}> 
       <View style={[styles.busynessDot, { backgroundColor: dot }]} />
-      <Text style={[styles.busynessText, { color: busy ? busy.text : '#333' }]}>{label ?? ''}{percent != null ? ` • ${percent}%` : ''}</Text>
+      <Text style={[styles.busynessText, { color: busy ? busy.text : '#333' }]}>{label ?? ''}{percent != null ? ` â€¢ ${percent}%` : ''}</Text>
     </View>
   );
 }
 
-// react-native-maps doesn't render on web, so we show a simple list of saved cafés instead.
+// react-native-maps doesn't render on web, so we show a simple list of saved cafÃ©s instead.
 export default function CafeMap({ cafes, onSelectCafe }) {
   return (
     <View style={styles.container}>
@@ -50,15 +50,15 @@ export default function CafeMap({ cafes, onSelectCafe }) {
             <TouchableOpacity style={styles.row} onPress={() => onSelectCafe(item.id)} activeOpacity={0.8}>
               <BusynessBadgeWeb busyness={item.busyness} percent={percent} />
               <View style={{ flex: 1 }}>
-                <Text style={styles.rowName}>☕ {item.name}</Text>
+                <Text style={styles.rowName}>â˜• {item.name}</Text>
                 <Text style={styles.rowMeta}>
-                  {item.rating}★ · {item.distanceLabel} away
+                  {item.rating}â˜… Â· {item.distanceLabel} away
                 </Text>
               </View>
             </TouchableOpacity>
           );
         }}
-        ListEmptyComponent={<Text style={styles.subheading}>No saved cafés yet.</Text>}
+        ListEmptyComponent={<Text style={styles.subheading}>No saved cafÃ©s yet.</Text>}
         contentContainerStyle={{ paddingVertical: 8 }}
       />
     </View>
@@ -81,7 +81,7 @@ const styles = StyleSheet.create({
   },
   subheading: {
     fontSize: 14,
-    fontFamily: 'monospace',
+    fontFamily: 'SpaceMono',
     fontWeight: 'bold',
     color: '#690b22',
     marginBottom: 16,
@@ -118,14 +118,15 @@ const styles = StyleSheet.create({
   },
   rowName: {
     fontSize: 16,
-    fontFamily: 'monospace',
+    fontFamily: 'SpaceMono',
     fontWeight: 'bold',
     color: '#690b22',
     marginBottom: 2,
   },
   rowMeta: {
     fontSize: 13,
-    fontFamily: 'monospace',
+    fontFamily: 'SpaceMono',
     color: '#813D18',
   },
 });
+

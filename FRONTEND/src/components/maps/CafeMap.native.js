@@ -1,4 +1,4 @@
-import { View, Text, StyleSheet, Animated } from 'react-native';
+﻿import { View, Text, StyleSheet, Animated } from 'react-native';
 import { useEffect, useRef } from 'react';
 import MapView, { Marker, Callout, PROVIDER_DEFAULT } from 'react-native-maps';
 
@@ -29,7 +29,7 @@ function BusynessBadge({ busyness, percent }) {
   return (
     <View style={[styles.busynessBadge, { backgroundColor: busy.bg }]}>
       <Animated.View style={[styles.busynessDot, { backgroundColor: busy.dot, transform: [{ scale: pulse }] }]} />
-      <Text style={[styles.busynessText, { color: busy.text }]}>{busy.label} • {percent ?? ''}%</Text>
+      <Text style={[styles.busynessText, { color: busy.text }]}>{busy.label} â€¢ {percent ?? ''}%</Text>
     </View>
   );
 }
@@ -70,10 +70,10 @@ export default function CafeMap({ cafes, region, permissionDenied, onSelectCafe 
                 <View style={styles.callout}>
                   <Text style={styles.calloutName}>{cafe.name}</Text>
                   <Text style={styles.calloutMeta}>
-                    {cafe.rating}★ · {cafe.distanceLabel} away
+                    {cafe.rating}â˜… Â· {cafe.distanceLabel} away
                   </Text>
                   <BusynessBadge busyness={cafe.busyness} percent={percent} />
-                  <Text style={styles.calloutLink}>View details →</Text>
+                  <Text style={styles.calloutLink}>View details â†’</Text>
                 </View>
               </Callout>
             </Marker>
@@ -87,13 +87,13 @@ export default function CafeMap({ cafes, region, permissionDenied, onSelectCafe 
         <Text style={styles.subheading}>
           {permissionDenied
             ? 'Enable location to see distances from you.'
-            : 'Your saved cafés, near you.'}
+            : 'Your saved cafÃ©s, near you.'}
         </Text>
       </View>
 
       {cafes.length === 0 && (
         <View style={styles.emptyOverlay} pointerEvents="none">
-          <Text style={styles.emptyText}>No saved cafés to map yet.</Text>
+          <Text style={styles.emptyText}>No saved cafÃ©s to map yet.</Text>
         </View>
       )}
     </View>
@@ -123,7 +123,7 @@ const styles = StyleSheet.create({
   },
   subheading: {
     fontSize: 13,
-    fontFamily: 'monospace',
+    fontFamily: 'SpaceMono',
     fontWeight: 'bold',
     color: '#690b22',
   },
@@ -138,20 +138,20 @@ const styles = StyleSheet.create({
   },
   calloutName: {
     fontSize: 15,
-    fontFamily: 'monospace',
+    fontFamily: 'SpaceMono',
     fontWeight: 'bold',
     color: '#690b22',
     marginBottom: 2,
   },
   calloutMeta: {
     fontSize: 12,
-    fontFamily: 'monospace',
+    fontFamily: 'SpaceMono',
     color: '#813D18',
     marginBottom: 6,
   },
   calloutLink: {
     fontSize: 12,
-    fontFamily: 'monospace',
+    fontFamily: 'SpaceMono',
     fontWeight: 'bold',
     color: '#1A7A5E',
   },
@@ -176,7 +176,7 @@ const styles = StyleSheet.create({
   },
   calloutBusy: {
     fontSize: 12,
-    fontFamily: 'monospace',
+    fontFamily: 'SpaceMono',
     fontWeight: '700',
     color: '#fff',
     backgroundColor: '#FF6B6B',
@@ -198,8 +198,9 @@ const styles = StyleSheet.create({
   },
   emptyText: {
     fontSize: 14,
-    fontFamily: 'monospace',
+    fontFamily: 'SpaceMono',
     fontWeight: 'bold',
     color: '#690b22',
   },
 });
+

@@ -1,4 +1,4 @@
-import React from 'react';
+﻿import React from 'react';
 import { StyleSheet, View, Text, Linking } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 
@@ -19,7 +19,7 @@ export default function DetailMap({ latitude, longitude, name, address, mapsUri,
         <Text style={styles.dinerText}>Interactive Map is available on Mobile!</Text>
         <Text style={styles.addressText} numberOfLines={2}>{address || 'No address provided'}</Text>
         <Text style={styles.linkText} onPress={handleOpenMaps}>
-          Open in Google Maps ↗
+          Open in Google Maps â†—
         </Text>
       </View>
     </View>
@@ -43,14 +43,14 @@ const styles = StyleSheet.create({
     gap: 4,
   },
   dinerText: {
-    fontFamily: 'monospace',
+    fontFamily: 'SpaceMono',
     fontWeight: 'bold',
     color: '#690b22',
     textAlign: 'center',
     fontSize: 14,
   },
   addressText: {
-    fontFamily: 'monospace',
+    fontFamily: 'SpaceMono',
     color: '#813D18',
     textAlign: 'center',
     fontSize: 12,
@@ -58,7 +58,7 @@ const styles = StyleSheet.create({
     paddingHorizontal: 8,
   },
   linkText: {
-    fontFamily: 'monospace',
+    fontFamily: 'SpaceMono',
     fontWeight: 'bold',
     color: '#1A7A5E',
     textDecorationLine: 'underline',
@@ -67,3 +67,4 @@ const styles = StyleSheet.create({
   },
   
 });
+

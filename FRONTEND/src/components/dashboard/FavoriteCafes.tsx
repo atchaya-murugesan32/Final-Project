@@ -2,7 +2,6 @@ import React from 'react';
 import { View, Text, StyleSheet, FlatList, Image, TouchableOpacity, Dimensions } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { removeFavorite } from '../../api/dashboard';
-import { LinearGradient } from 'expo-linear-gradient';
 
 const { width } = Dimensions.get('window');
 
@@ -24,12 +23,9 @@ export default function FavoriteCafes({ favorites, onRefresh }) {
         source={{ uri: item.image_url || 'https://images.unsplash.com/photo-1554118811-1e0d58224f24?q=80' }} 
         style={styles.image} 
       />
-      <LinearGradient 
-        colors={['transparent', 'rgba(0,0,0,0.8)']} 
-        style={styles.gradientOverlay}
-      >
+      <View style={styles.overlay}>
         <TouchableOpacity style={styles.removeBtn} onPress={() => handleRemove(item.cafe_id)}>
-          <Ionicons name="trash-outline" size={20} color="#e11d48" />
+          <Ionicons name="trash-outline" size={20} color="#35545ad7" />
         </TouchableOpacity>
         
         <View style={styles.info}>
@@ -50,7 +46,7 @@ export default function FavoriteCafes({ favorites, onRefresh }) {
             )}
           </View>
         </View>
-      </LinearGradient>
+      </View>
     </View>
   );
 
@@ -60,7 +56,7 @@ export default function FavoriteCafes({ favorites, onRefresh }) {
       <FlatList
         data={favorites}
         renderItem={renderItem}
-        keyExtractor={item => item.id?.toString() || Math.random().toString()}
+        keyExtractor={item => String(item.cafe_id ?? item.id)}
         horizontal
         showsHorizontalScrollIndicator={false}
         contentContainerStyle={styles.listContent}
@@ -82,6 +78,7 @@ const styles = StyleSheet.create({
     marginBottom: 16,
     paddingHorizontal: 4,
     letterSpacing: -0.5,
+    fontFamily: 'SpaceMono',
   },
   listContent: {
     paddingRight: 20,
@@ -92,7 +89,7 @@ const styles = StyleSheet.create({
     height: 200,
     borderRadius: 24,
     overflow: 'hidden',
-    backgroundColor: '#fff',
+    backgroundColor: '#FAF3DD',
     shadowColor: '#000',
     shadowOffset: { width: 0, height: 8 },
     shadowOpacity: 0.15,
@@ -104,16 +101,17 @@ const styles = StyleSheet.create({
     height: '100%',
     position: 'absolute',
   },
-  gradientOverlay: {
+  overlay: {
     flex: 1,
     justifyContent: 'flex-end',
     padding: 16,
+    backgroundColor: 'rgba(0,0,0,0.55)',
   },
   removeBtn: {
     position: 'absolute',
     top: 12,
     right: 12,
-    backgroundColor: 'rgba(255, 255, 255, 0.9)',
+    backgroundColor: '#FAF3DD',
     width: 36,
     height: 36,
     borderRadius: 18,
@@ -135,6 +133,7 @@ const styles = StyleSheet.create({
     textShadowColor: 'rgba(0,0,0,0.3)',
     textShadowOffset: { width: 0, height: 1 },
     textShadowRadius: 3,
+    fontFamily: 'SpaceMono',
   },
   row: {
     flexDirection: 'row',
@@ -156,6 +155,7 @@ const styles = StyleSheet.create({
     fontWeight: '600',
     fontSize: 12,
     marginLeft: 4,
+    fontFamily: 'SpaceMono',
   },
   badge: {
     paddingHorizontal: 8,
@@ -166,8 +166,9 @@ const styles = StyleSheet.create({
     color: '#fff',
     fontSize: 12,
     fontWeight: '700',
+    fontFamily: 'SpaceMono',
   },
   bgGreen: { backgroundColor: '#16a34a' },
-  bgRed: { backgroundColor: '#dc2626' },
+  bgRed: { backgroundColor: '#35545ad7' },
   bgYellow: { backgroundColor: '#d97706' },
 });

@@ -1,11 +1,15 @@
 import React, { useState } from 'react';
 import { View, Text, StyleSheet, Image, TouchableOpacity, TextInput, ActivityIndicator } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
-import { LinearGradient } from 'expo-linear-gradient';
 import { updateUserProfile } from '../../api/dashboard';
 import { changePassword } from '../../api/auth';
 
-export default function UserProfile({ profile, onUpdate }) {
+type UserProfileProps = {
+  profile: any;
+  onUpdate: () => void | Promise<void>;
+};
+
+export default function UserProfile({ profile, onUpdate }: UserProfileProps) {
   const [isEditing, setIsEditing] = useState(false);
   const [name, setName] = useState(profile?.name || '');
   const [phone, setPhone] = useState(profile?.phone || '');
@@ -50,7 +54,7 @@ export default function UserProfile({ profile, onUpdate }) {
       setOldPassword('');
       setNewPassword('');
     } catch (e) {
-      alert(e.message || "Failed to update password");
+      alert(e instanceof Error ? e.message : "Failed to update password");
     } finally {
       setPasswordLoading(false);
     }
@@ -60,7 +64,7 @@ export default function UserProfile({ profile, onUpdate }) {
   const lastLogin = profile?.last_login ? new Date(profile.last_login).toLocaleDateString() : 'Just now';
 
   return (
-    <LinearGradient colors={['rgba(255,255,255,0.4)', 'rgba(255,255,255,0.1)']} style={styles.card}>
+    <View style={styles.card}>
       <View style={styles.headerRow}>
         <View style={styles.avatarContainer}>
           {profile?.profile_picture ? (
@@ -110,9 +114,9 @@ export default function UserProfile({ profile, onUpdate }) {
           onPress={() => isEditing ? handleSave() : setIsEditing(true)}
         >
           {loading ? (
-            <ActivityIndicator color="#690b22" size="small" />
+            <ActivityIndicator color="#35545ad7" size="small" />
           ) : (
-            <Ionicons name={isEditing ? "checkmark" : "pencil"} size={20} color="#690b22" />
+            <Ionicons name={isEditing ? "checkmark" : "pencil"} size={20} color="#35545ad7" />
           )}
         </TouchableOpacity>
       </View>
@@ -140,7 +144,7 @@ export default function UserProfile({ profile, onUpdate }) {
         style={styles.changePasswordBtn} 
         onPress={() => setIsChangingPassword(!isChangingPassword)}
       >
-        <Ionicons name="lock-closed-outline" size={16} color="#690b22" />
+        <Ionicons name="lock-closed-outline" size={16} color="#35545ad7" />
         <Text style={styles.changePasswordText}>
           {isChangingPassword ? "Cancel" : "Change Password"}
         </Text>
@@ -177,17 +181,18 @@ export default function UserProfile({ profile, onUpdate }) {
           </TouchableOpacity>
         </View>
       )}
-    </LinearGradient>
+    </View>
   );
 }
 
 const styles = StyleSheet.create({
   card: {
+    backgroundColor: '#FAF3DD',
     borderRadius: 24,
     padding: 24,
     marginBottom: 24,
     borderWidth: 1,
-    borderColor: 'rgba(255, 255, 255, 0.5)',
+    borderColor: '#35545ad7',
     shadowColor: '#000',
     shadowOffset: { width: 0, height: 10 },
     shadowOpacity: 0.1,
@@ -213,7 +218,7 @@ const styles = StyleSheet.create({
     width: 80,
     height: 80,
     borderRadius: 40,
-    backgroundColor: '#690b22',
+    backgroundColor: '#35545ad7',
     justifyContent: 'center',
     alignItems: 'center',
     borderWidth: 3,
@@ -245,36 +250,41 @@ const styles = StyleSheet.create({
     fontWeight: '800',
     color: '#1a1a1a',
     letterSpacing: -0.5,
+    fontFamily: 'SpaceMono',
   },
   username: {
     fontSize: 14,
-    color: '#690b22',
+    color: '#35545ad7',
     fontWeight: '600',
     marginTop: 2,
+    fontFamily: 'SpaceMono',
   },
   email: {
     fontSize: 14,
     color: '#666',
     marginTop: 4,
+    fontFamily: 'SpaceMono',
   },
   phone: {
     fontSize: 14,
     color: '#666',
     marginTop: 2,
+    fontFamily: 'SpaceMono',
   },
   input: {
     borderBottomWidth: 1,
-    borderBottomColor: '#690b22',
+    borderBottomColor: '#35545ad7',
     fontSize: 16,
     color: '#333',
     paddingVertical: 4,
     marginBottom: 8,
+    fontFamily: 'SpaceMono',
   },
   editButton: {
     width: 40,
     height: 40,
     borderRadius: 20,
-    backgroundColor: 'rgba(255,255,255,0.8)',
+    backgroundColor: '#FAF3DD',
     justifyContent: 'center',
     alignItems: 'center',
     shadowColor: '#000',
@@ -302,11 +312,13 @@ const styles = StyleSheet.create({
     textTransform: 'uppercase',
     letterSpacing: 0.5,
     marginBottom: 4,
+    fontFamily: 'SpaceMono',
   },
   statValue: {
     fontSize: 14,
     fontWeight: '700',
     color: '#333',
+    fontFamily: 'SpaceMono',
   },
   statusBadge: {
     backgroundColor: '#dcfce7',
@@ -318,6 +330,7 @@ const styles = StyleSheet.create({
     color: '#166534',
     fontSize: 12,
     fontWeight: 'bold',
+    fontFamily: 'SpaceMono',
   },
   changePasswordBtn: {
     flexDirection: 'row',
@@ -325,26 +338,27 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     marginTop: 16,
     paddingVertical: 10,
-    backgroundColor: '#fff',
+    backgroundColor: '#FAF3DD',
     borderRadius: 12,
     borderWidth: 1,
-    borderColor: '#fce7f3',
+    borderColor: '#35545ad7',
   },
   changePasswordText: {
     marginLeft: 8,
-    color: '#690b22',
+    color: '#35545ad7',
     fontWeight: '600',
     fontSize: 14,
+    fontFamily: 'SpaceMono',
   },
   passwordForm: {
     marginTop: 16,
     padding: 16,
-    backgroundColor: 'rgba(255,255,255,0.6)',
+    backgroundColor: '#FAF3DD',
     borderRadius: 16,
   },
   submitPasswordBtn: {
     marginTop: 16,
-    backgroundColor: '#690b22',
+    backgroundColor: '#35545ad7',
     paddingVertical: 12,
     borderRadius: 12,
     alignItems: 'center',
@@ -353,5 +367,6 @@ const styles = StyleSheet.create({
     color: '#fff',
     fontWeight: 'bold',
     fontSize: 16,
+    fontFamily: 'SpaceMono',
   }
 });

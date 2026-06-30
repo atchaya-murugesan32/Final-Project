@@ -49,11 +49,9 @@ FOOD_PLACE_TYPES = {
 def get_nearby_places(lat: float, lng: float, radius: float = 5000.0):
     url = "https://places.googleapis.com/v1/places:searchNearby"
 
-
-
     payload = {
-        "includedTypes": ["restaurant"],
-        "maxResultCount": 10,
+        "includedTypes": ["cafe", "restaurant", "bakery", "bar", "brunch_restaurant"],
+        "maxResultCount": 20,
         "locationRestriction": {
             "circle": {
                 "center": {
@@ -66,9 +64,6 @@ def get_nearby_places(lat: float, lng: float, radius: float = 5000.0):
     }
 
     response = requests.post(url, json=payload, headers=headers, timeout=15)
-
-    print(response.status_code)
-    print("Response JSON:", response.json())  # this will show Google's actual error message
     response.raise_for_status()
 
     data = response.json()
@@ -126,21 +121,3 @@ def get_cafes(text_query: str, lat: float, lng: float, radius: float = 5000.0, p
 
     data = response.json()
     return data.get("places", [])
-
-
-def get_place_details(place_id: str):
-    url = f"https://places.googleapis.com/v1/places/{place_id}"
-
-    headers = {
-        "Content-Type": "application/json",
-        "X-Goog-Api-Key": settings.GOOGLE_PLACES_API_KEY,
-        "X-Goog-FieldMask": "id,photos",
-    }
-
-    try:
-        response = requests.get(url, headers=headers, timeout=10)
-        response.raise_for_status()
-        return response.json()
-    except Exception as e:
-        print(f"Error fetching place details for {place_id}: {e}")
-        return {}

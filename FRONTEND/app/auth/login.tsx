@@ -1,7 +1,8 @@
-import React, { useState } from 'react';
+﻿import React, { useState } from 'react';
 import {
   View,
   Text,
+  Image,
   TextInput,
   TouchableOpacity,
   StyleSheet,
@@ -11,7 +12,6 @@ import {
 } from 'react-native';
 import { useRouter } from 'expo-router';
 import { useAuth } from '../../src/context/AuthContext';
-import { LinearGradient } from 'expo-linear-gradient';
 import Animated, { FadeInDown, FadeInUp } from 'react-native-reanimated';
 
 export default function LoginScreen() {
@@ -42,14 +42,22 @@ export default function LoginScreen() {
   };
 
   return (
-    <LinearGradient colors={['#e8d7be', '#a58e1e']} style={styles.container}>
+    <View style={styles.container}>
       <KeyboardAvoidingView
         behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
         style={styles.innerContainer}
       >
+        <Animated.View entering={FadeInDown.duration(600).springify()} style={styles.logoWrapper}>
+          <Image
+            source={require('../../assets/images/ZenBrewWord.png')}
+            style={styles.logo}
+            resizeMode="contain"
+          />
+        </Animated.View>
+
         <Animated.View entering={FadeInDown.duration(600).springify()}>
           <Text style={styles.title}>Welcome Back</Text>
-          <Text style={styles.subtitle}>Sign in to access your saved cafés.</Text>
+          <Text style={styles.subtitle}>Your perfect spot is waiting. Sign in to find it.</Text>
         </Animated.View>
 
         <Animated.View entering={FadeInUp.delay(200).duration(600).springify()} style={styles.formContainer}>
@@ -95,63 +103,76 @@ export default function LoginScreen() {
           </View>
         </Animated.View>
       </KeyboardAvoidingView>
-    </LinearGradient>
+    </View>
   );
 }
 
 const styles = StyleSheet.create({
   container: {
     flex: 1,
+    backgroundColor: '#ffedd1',
+
   },
   innerContainer: {
     flex: 1,
-    padding: 24,
-    justifyContent: 'center',
+    paddingHorizontal: 20,
+    paddingVertical: 18,
+    justifyContent: 'flex-start',
+    paddingTop: 28,
+  },
+  logoWrapper: {
+    width: '100%',
+    alignItems: 'center',
+    marginBottom: 4,
+  },
+  logo: {
+    width: '96%',
+    maxWidth: 520,
+    height: 190,
   },
   title: {
-    fontSize: 48,
+    fontSize: 42,
     fontWeight: 'bold',
     fontFamily: 'Funky-Vintage',
     color: '#690b22',
-    marginBottom: 8,
+    marginBottom: 4,
   },
   subtitle: {
     fontSize: 16,
     fontFamily: 'SpaceMono',
     color: '#690b22',
-    marginBottom: 40,
+    marginBottom: 22,
   },
   formContainer: {
-    backgroundColor: 'rgba(250, 243, 221, 0.4)',
-    padding: 24,
+    backgroundColor: 'rgba(164, 182, 29, 0.58)',
+    padding: 18,
     borderRadius: 24,
-    borderWidth: 1,
-    borderColor: 'rgba(250, 243, 221, 0.6)',
+    
   },
   input: {
     backgroundColor: '#FAF3DD',
     borderWidth: 1.5,
     borderColor: '#690b22',
-    padding: 16,
-    marginBottom: 16,
+    padding: 14,
+    marginBottom: 12,
     borderRadius: 12,
     fontSize: 16,
     color: '#690b22',
-    fontFamily: 'monospace',
+    fontFamily: 'SpaceMono',
   },
   error: {
     color: '#cc0000',
     marginBottom: 16,
-    fontFamily: 'monospace',
+    fontFamily: 'SpaceMono',
     textAlign: 'center',
   },
   primaryButton: {
     backgroundColor: '#690b22',
-    paddingVertical: 16,
+    paddingVertical: 14,
     borderRadius: 12,
     alignItems: 'center',
     justifyContent: 'center',
-    marginTop: 8,
+    marginTop: 4,
     shadowColor: '#690b22',
     shadowOffset: { width: 0, height: 4 },
     shadowOpacity: 0.3,
@@ -162,22 +183,24 @@ const styles = StyleSheet.create({
     color: '#FAF3DD',
     fontSize: 18,
     fontWeight: 'bold',
-    fontFamily: 'monospace',
+    fontFamily: 'SpaceMono',
   },
   footer: {
     flexDirection: 'row',
     justifyContent: 'center',
     alignItems: 'center',
-    marginTop: 24,
+    marginTop: 14,
     gap: 8,
   },
   footerText: {
     color: '#4f2f1d',
-    fontFamily: 'monospace',
+    fontFamily: 'SpaceMono',
+    fontWeight: 'bold',
   },
   linkText: {
     color: '#690b22',
     fontWeight: 'bold',
-    fontFamily: 'monospace',
+    fontFamily: 'SpaceMono',
   },
 });
+

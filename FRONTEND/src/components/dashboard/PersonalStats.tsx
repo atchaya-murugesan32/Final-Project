@@ -2,7 +2,6 @@ import React from 'react';
 import { View, Text, StyleSheet } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import Animated, { FadeInUp } from 'react-native-reanimated';
-import { LinearGradient } from 'expo-linear-gradient';
 
 export default function PersonalStats({ stats }) {
   if (!stats) return null;
@@ -18,13 +17,13 @@ export default function PersonalStats({ stats }) {
       <View style={styles.grid}>
         {statItems.map((item, index) => (
           <Animated.View key={index} entering={FadeInUp.delay(item.delay)} style={styles.statCardWrapper}>
-            <LinearGradient colors={['rgba(255,255,255,0.7)', 'rgba(255,255,255,0.3)']} style={styles.statCard}>
+            <View style={styles.statCard}>
               <View style={styles.iconContainer}>
-                <Ionicons name={item.icon} size={22} color="#690b22" />
+                <Ionicons name={item.icon} size={22} color="#35545ad7" />
               </View>
               <Text style={styles.statValue}>{item.value}</Text>
               <Text style={styles.statLabel}>{item.label}</Text>
-            </LinearGradient>
+            </View>
           </Animated.View>
         ))}
       </View>
@@ -43,6 +42,7 @@ const styles = StyleSheet.create({
     marginBottom: 16,
     paddingHorizontal: 4,
     letterSpacing: -0.5,
+    fontFamily: 'SpaceMono',
   },
   grid: {
     flexDirection: 'row',
@@ -54,11 +54,12 @@ const styles = StyleSheet.create({
     width: '48%',
   },
   statCard: {
+    backgroundColor: '#FAF3DD',
     borderRadius: 20,
     padding: 16,
     alignItems: 'center',
     borderWidth: 1,
-    borderColor: 'rgba(255, 255, 255, 0.6)',
+    borderColor: '#35545ad7',
     shadowColor: '#000',
     shadowOffset: { width: 0, height: 4 },
     shadowOpacity: 0.05,
@@ -69,7 +70,7 @@ const styles = StyleSheet.create({
     width: 44,
     height: 44,
     borderRadius: 22,
-    backgroundColor: 'rgba(105, 11, 34, 0.1)',
+    backgroundColor: 'rgba(53, 84, 90, 0.15)',
     justifyContent: 'center',
     alignItems: 'center',
     marginBottom: 12,
@@ -78,6 +79,7 @@ const styles = StyleSheet.create({
     fontSize: 26,
     fontWeight: '900',
     color: '#1a1a1a',
+    fontFamily: 'SpaceMono',
   },
   statLabel: {
     fontSize: 12,
@@ -85,5 +87,6 @@ const styles = StyleSheet.create({
     marginTop: 4,
     fontWeight: '600',
     textAlign: 'center',
+    fontFamily: 'SpaceMono',
   }
 });

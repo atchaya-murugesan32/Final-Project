@@ -1,4 +1,4 @@
-import React, { useState, useCallback } from 'react';
+﻿import React, { useState, useCallback } from 'react';
 import {
   View,
   Text,
@@ -12,15 +12,30 @@ import {
 } from 'react-native';
 import { useFocusEffect } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
-import { LinearGradient } from 'expo-linear-gradient';
 import { getMyReservations, cancelReservation } from '../../src/api/reservations';
+import { useAuth } from '../../src/context/AuthContext';
+
+type AuthContextValue = {
+  token: string | null;
+  loading: boolean;
+};
 
 export default function ReservationsScreen() {
+  const auth = useAuth() as AuthContextValue | null;
+  const token = auth?.token ?? null;
+  const authLoading = auth?.loading ?? false;
   const [reservations, setReservations] = useState([]);
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
 
   const fetchReservations = async () => {
+    if (!token) {
+      setReservations([]);
+      setLoading(false);
+      setRefreshing(false);
+      return;
+    }
+
     try {
       const data = await getMyReservations();
       setReservations(data);
@@ -34,8 +49,13 @@ export default function ReservationsScreen() {
 
   useFocusEffect(
     useCallback(() => {
+      if (authLoading) {
+        return undefined;
+      }
+
       fetchReservations();
-    }, [])
+      return undefined;
+    }, [authLoading, token])
   );
 
   const onRefresh = () => {
@@ -43,7 +63,11 @@ export default function ReservationsScreen() {
     fetchReservations();
   };
 
-  const handleCancel = (id) => {
+  const handleCancel = (id: number) => {
+    if (!token) {
+      return;
+    }
+
     if (Platform.OS === 'web') {
       const confirm = window.confirm("Are you sure you want to cancel this reservation?");
       if (confirm) {
@@ -52,7 +76,7 @@ export default function ReservationsScreen() {
             await cancelReservation(id);
             fetchReservations();
           } catch (error) {
-            alert(error.message);
+            alert(error instanceof Error ? error.message : 'Failed to cancel reservation');
           }
         })();
       }
@@ -72,7 +96,7 @@ export default function ReservationsScreen() {
               await cancelReservation(id);
               fetchReservations();
             } catch (error) {
-              Alert.alert("Error", error.message);
+              Alert.alert("Error", error instanceof Error ? error.message : 'Failed to cancel reservation');
             }
           }
         }
@@ -80,7 +104,7 @@ export default function ReservationsScreen() {
     );
   };
 
-  const renderItem = ({ item }) => {
+  const renderItem = ({ item }: { item: any }) => {
     const isCancelled = item.status === 'Cancelled';
     const isPast = new Date(item.reservation_date) < new Date(new Date().toDateString());
 
@@ -94,20 +118,20 @@ export default function ReservationsScreen() {
         </View>
 
         <View style={styles.detailsRow}>
-          <Ionicons name="calendar-outline" size={16} color="#666" />
+          <Ionicons name="calendar-outline" size={16} color="#690b22" />
           <Text style={styles.detailText}>{item.reservation_date}</Text>
         </View>
         <View style={styles.detailsRow}>
-          <Ionicons name="time-outline" size={16} color="#666" />
+          <Ionicons name="time-outline" size={16} color="#690b22" />
           <Text style={styles.detailText}>{item.reservation_time}</Text>
         </View>
         <View style={styles.detailsRow}>
-          <Ionicons name="people-outline" size={16} color="#666" />
+          <Ionicons name="people-outline" size={16} color="#690b22" />
           <Text style={styles.detailText}>{item.num_people} People</Text>
         </View>
         {item.table_number && (
           <View style={styles.detailsRow}>
-            <Ionicons name="restaurant-outline" size={16} color="#666" />
+            <Ionicons name="restaurant-outline" size={16} color="#690b22" />
             <Text style={[styles.detailText, { fontWeight: 'bold', color: '#690b22' }]}>{item.table_number}</Text>
           </View>
         )}
@@ -126,20 +150,19 @@ export default function ReservationsScreen() {
   if (loading) {
     return (
       <View style={styles.loadingContainer}>
-        <ActivityIndicator size="large" color="#8a1a36" />
+        <ActivityIndicator size="large" color="#E4CAAA" />
       </View>
     );
   }
 
   return (
     <View style={styles.container}>
-      <LinearGradient colors={['#690b22', '#9c1c38']} style={styles.header}>
-        <Text style={styles.headerTitle}>My Reservations</Text>
-      </LinearGradient>
+      <Text style={styles.heading}>My Reservations</Text>
+      <Text style={styles.subheading}>Your upcoming and past bookings.</Text>
 
       {reservations.length === 0 ? (
         <View style={styles.emptyContainer}>
-          <Ionicons name="restaurant-outline" size={60} color="#ccc" />
+          <Ionicons name="cafe-outline" size={64} color="#E4CAAA" />
           <Text style={styles.emptyText}>You have no reservations yet.</Text>
         </View>
       ) : (
@@ -160,30 +183,37 @@ export default function ReservationsScreen() {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#f5f5f5',
+    backgroundColor: '#7A7849',
+    padding: 16,
   },
   loadingContainer: {
     flex: 1,
     justifyContent: 'center',
     alignItems: 'center',
+    backgroundColor: '#7A7849',
   },
-  header: {
-    paddingTop: 60,
-    paddingBottom: 20,
-    paddingHorizontal: 20,
-    borderBottomLeftRadius: 20,
-    borderBottomRightRadius: 20,
+  heading: {
+    fontSize: 65,
+    fontWeight: 'bold',
+    fontFamily: 'Funky-Vintage',
+    color: '#E4CAAA',
+    marginTop: 8,
+    marginBottom: 4,
+    textAlign: 'center',
   },
-  headerTitle: {
-    fontSize: 24,
-    fontWeight: '700',
-    color: '#fff',
+  subheading: {
+    fontSize: 20,
+    fontFamily: 'SpaceMono',
+    fontWeight: 'bold',
+    color: '#E4CAAA',
+    marginBottom: 16,
+    textAlign: 'center',
   },
   listContainer: {
-    padding: 16,
+    paddingVertical: 8,
   },
   card: {
-    backgroundColor: '#fff',
+    backgroundColor: '#FAF3DD',
     borderRadius: 16,
     padding: 16,
     marginBottom: 16,
@@ -205,7 +235,8 @@ const styles = StyleSheet.create({
   cafeName: {
     fontSize: 18,
     fontWeight: '700',
-    color: '#333',
+    fontFamily: 'SpaceMono',
+    color: '#690b22',
     flex: 1,
   },
   statusBadge: {
@@ -215,15 +246,16 @@ const styles = StyleSheet.create({
     marginLeft: 8,
   },
   statusConfirmed: {
-    backgroundColor: '#e6f4ea',
+    backgroundColor: '#E4CAAA',
   },
   statusCancelled: {
-    backgroundColor: '#fbe9e7',
+    backgroundColor: '#bfa57c',
   },
   statusText: {
     fontSize: 12,
     fontWeight: '600',
-    color: '#333',
+    fontFamily: 'SpaceMono',
+    color: '#690b22',
   },
   detailsRow: {
     flexDirection: 'row',
@@ -233,19 +265,22 @@ const styles = StyleSheet.create({
   detailText: {
     marginLeft: 8,
     fontSize: 14,
-    color: '#555',
+    fontFamily: 'SpaceMono',
+    color: '#690b22',
   },
   cancelButton: {
     marginTop: 12,
     borderWidth: 1,
-    borderColor: '#d32f2f',
+    borderColor: '#690b22',
     borderRadius: 8,
     paddingVertical: 8,
     alignItems: 'center',
+    backgroundColor: 'rgba(105, 11, 34, 0.07)',
   },
   cancelButtonText: {
-    color: '#d32f2f',
+    color: '#690b22',
     fontWeight: '600',
+    fontFamily: 'SpaceMono',
   },
   emptyContainer: {
     flex: 1,
@@ -254,9 +289,12 @@ const styles = StyleSheet.create({
     padding: 20,
   },
   emptyText: {
-    marginTop: 16,
-    fontSize: 16,
-    color: '#888',
+    marginTop: 14,
+    fontSize: 24,
+    fontFamily: 'SpaceMono',
+    fontWeight: 'bold',
+    color: '#E4CAAA',
     textAlign: 'center',
   }
 });
+

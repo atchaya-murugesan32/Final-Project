@@ -1,10 +1,14 @@
-import { View, Text, FlatList, StyleSheet, TouchableOpacity, Modal, Pressable } from 'react-native';
+﻿import { View, Text, FlatList, StyleSheet, TouchableOpacity, Modal, Pressable } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import CafeCard from '../../src/components/CafeCard';
 import { useCafes } from '../../src/context/CafesContext';
 import AddCafeButton from '../../src/components/AddCafeButton';
-import { useMemo, useState, useEffect } from 'react';
+import { useMemo, useState, useEffect, useCallback } from 'react';
 import { getFavorites, addFavorite, removeFavorite } from '../../src/api/dashboard';
+import { useAuth } from '../../src/context/AuthContext';
+import { useFocusEffect } from 'expo-router';
+import * as Location from 'expo-location';
+import { distanceInMiles } from '../../src/utils/distance';
 
 const sortOptions = [
   { label: 'Most recent', value: 'recent' },
@@ -14,19 +18,114 @@ const sortOptions = [
   { label: 'Seats available', value: 'seats' },
 ];
 
+type AuthContextValue = {
+  token: string | null;
+  loading: boolean;
+};
+
 export default function CafeListScreen() {
   const { cafes, removeCafe } = useCafes();
+  const auth = useAuth() as AuthContextValue | null;
+  const token = auth?.token ?? null;
+  const authLoading = auth?.loading ?? false;
 
   const [sortMode, setSortMode] = useState('recent');
   const [dropdownOpen, setDropdownOpen] = useState(false);
   const [editMode, setEditMode] = useState(false);
   const [favorites, setFavorites] = useState<any[]>([]);
+  const [userLocation, setUserLocation] = useState<{ latitude: number; longitude: number } | null>(null);
 
+  //runs when the component mounts and when the token or authLoading changes
+  //fetches the user's favorite cafes from the backend if the user is logged in
   useEffect(() => {
-    getFavorites().then(setFavorites).catch(console.error);
-  }, []);
+    if (authLoading) { //still checking if user is logged in, don't fetch favorites yet
+      return;
+    }
 
+    if (!token) {
+      setFavorites([]);
+      return;
+    }
+
+    getFavorites().then(setFavorites).catch(console.error);
+  }, [authLoading, token]);
+
+  // Track user location while this tab is focused so card distances stay current.
+  useFocusEffect(
+    useCallback(() => {
+      let active = true;
+      let subscription: Location.LocationSubscription | null = null;
+
+      (async () => {
+        const { status } = await Location.requestForegroundPermissionsAsync();
+        if (status !== 'granted') {
+          return;
+        }
+
+        const loc = await Location.getCurrentPositionAsync({
+          accuracy: Location.Accuracy.Balanced,
+        });
+
+        if (active) {
+          setUserLocation({
+            latitude: loc.coords.latitude,
+            longitude: loc.coords.longitude,
+          });
+        }
+
+        subscription = await Location.watchPositionAsync(
+          {
+            accuracy: Location.Accuracy.Balanced,
+            timeInterval: 5000,
+            distanceInterval: 15,
+          },
+          (position) => {
+            if (!active) {
+              return;
+            }
+
+            setUserLocation({
+              latitude: position.coords.latitude,
+              longitude: position.coords.longitude,
+            });
+          }
+        );
+      })();
+
+      return () => {
+        active = false;
+        subscription?.remove();
+      };
+    }, [])
+  );
+
+  const cafesWithLiveDistance = useMemo(() => {
+    return cafes.map((cafe: any) => {
+      if (!userLocation || cafe.latitude == null || cafe.longitude == null) {
+        return cafe;
+      }
+
+      const miles = distanceInMiles(
+        userLocation.latitude,
+        userLocation.longitude,
+        cafe.latitude,
+        cafe.longitude
+      );
+
+      return {
+        ...cafe,
+        distance_from_user: miles * 1.60934,
+        distanceMi: miles,
+      };
+    });
+  }, [cafes, userLocation]);
+
+  // Function to toggle favorite status of a cafe
   async function handleToggleFavorite(cafe: any) {
+    if (!token) {
+      return;
+    }
+
     const isFav = favorites.some(f => f.cafe_id === cafe.id);
     if (isFav) {
       setFavorites(prev => prev.filter(f => f.cafe_id !== cafe.id));
@@ -38,10 +137,12 @@ export default function CafeListScreen() {
     }
   }
 
+  // Find the selected sort option based on the current sort mode
   const selectedOption = sortOptions.find((option) => option.value === sortMode);
 
+  // Sort the cafes based on the selected sort mode
   const sortedCafes = useMemo(() => {
-    const copy = [...cafes];
+    const copy = [...cafesWithLiveDistance];
 
     switch (sortMode) {
       // Highest rating first
@@ -50,13 +151,17 @@ export default function CafeListScreen() {
 
       // Nearest first
       case 'distance':
-        return copy.sort((a, b) => a.distanceMi - b.distanceMi);
+        return copy.sort(
+          (a, b) =>
+            (a.distance_from_user ?? Number.MAX_SAFE_INTEGER) -
+            (b.distance_from_user ?? Number.MAX_SAFE_INTEGER)
+        );
 
-      // Relative busyness — least busy (lowest %) first
+      // Relative busyness â€” least busy (lowest %) first
       case 'busyness':
         return copy.sort((a, b) => a.busynessPercent - b.busynessPercent);
 
-      // Absolute availability — most free seats first
+      // Absolute availability â€” most free seats first
       case 'seats':
         return copy.sort((a, b) => b.seatsAvailable - a.seatsAvailable);
 
@@ -64,43 +169,48 @@ export default function CafeListScreen() {
       default:
         return copy.sort((a, b) => (b.savedAt ?? 0) - (a.savedAt ?? 0));
     }
-  }, [cafes, sortMode]);
+  }, [cafesWithLiveDistance, sortMode]);
 
+  //return the UI for the cafe list screen, including the sort dropdown, edit button, and the list of cafes
   return (
+    //heading and subheading for the cafe list screen
     <View style={styles.container}>
       <Text style={styles.heading}>Your Cafes</Text>
-      <Text style={styles.subheading}>Cafes saved, and loved by you.</Text>
+      <Text style={styles.subheading}>Eateries saved, and loved by you.</Text>
 
       {/* Sort dropdown */}
-      <View style={styles.sortBar}>
-        <Text style={styles.sortLabel}>Sort by</Text>
-        <View style={styles.dropdownWrapper}>
+      <View style={styles.sortSection}>
+        <View style={styles.sortBar}>
+          <Text style={styles.sortLabel}>Sort by</Text>
+          <View style={styles.dropdownWrapper}>
+            <TouchableOpacity
+              style={styles.dropdownButton}
+              onPress={() => setDropdownOpen(true)}
+              activeOpacity={0.85}
+            >
+              <Text style={styles.dropdownButtonText}>{selectedOption?.label ?? 'Select'}</Text>
+              <Ionicons name="chevron-down" size={18} color="#690b22" />
+            </TouchableOpacity>
+          </View>
+
           <TouchableOpacity
-            style={styles.dropdownButton}
-            onPress={() => setDropdownOpen(true)}
+            style={[styles.editButton, editMode && styles.editButtonActive]}
+            onPress={() => setEditMode((prev) => !prev)}
             activeOpacity={0.85}
           >
-            <Text style={styles.dropdownButtonText}>{selectedOption?.label ?? 'Select'}</Text>
-            <Ionicons name="chevron-down" size={18} color="#690b22" />
+            <Ionicons
+              name={editMode ? 'checkmark' : 'create-outline'}
+              size={16}
+              color={editMode ? '#FAF3DD' : '#690b22'}
+            />
+            <Text style={[styles.editButtonText, editMode && styles.editButtonTextActive]}>
+              {editMode ? 'Done' : 'Edit'}
+            </Text>
           </TouchableOpacity>
         </View>
-
-        <TouchableOpacity
-          style={[styles.editButton, editMode && styles.editButtonActive]}
-          onPress={() => setEditMode((prev) => !prev)}
-          activeOpacity={0.85}
-        >
-          <Ionicons
-            name={editMode ? 'checkmark' : 'create-outline'}
-            size={16}
-            color={editMode ? '#FAF3DD' : '#690b22'}
-          />
-          <Text style={[styles.editButtonText, editMode && styles.editButtonTextActive]}>
-            {editMode ? 'Done' : 'Edit'}
-          </Text>
-        </TouchableOpacity>
       </View>
-
+      
+      {/* Dropdown menu for sorting options */}
       <Modal
         visible={dropdownOpen}
         transparent
@@ -143,7 +253,14 @@ export default function CafeListScreen() {
             onFavoritePress={() => handleToggleFavorite(item)}
           />
         )}
-        contentContainerStyle={{ paddingVertical: 8 }}
+        ListEmptyComponent={(
+          <View style={styles.emptyState}>
+            <Ionicons name="cafe-outline" size={64} color="#E4CAAA" />
+            <Text style={styles.emptyStateTitle}>No places saved yet :(</Text>
+            <Text style={styles.emptyStateSubtitle}>Tap the + button to add your first spot.</Text>
+          </View>
+        )}
+        contentContainerStyle={sortedCafes.length === 0 ? styles.emptyListContent : { paddingVertical: 8 }}
       />
 
       <AddCafeButton />
@@ -154,40 +271,48 @@ export default function CafeListScreen() {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#a58e1ed2',
+    backgroundColor: '#35545ad7',
     padding: 16,
   },
 
   heading: {
-    fontSize: 50,
+    fontSize: 70,
     fontWeight: 'bold',
     fontFamily: 'Funky-Vintage',
-    color: '#690b22',
+    color: '#E4CAAA',
     marginTop: 8,
     marginBottom: 4,
+    textAlign: 'center',
   },
 
   subheading: {
-    fontSize: 14,
+    fontSize: 20,
     fontFamily: 'SpaceMono',
     fontWeight: 'bold',
-    color: '#690b22',
+    color: '#E4CAAA',
     marginBottom: 16,
+    textAlign: 'center',
+  },
+
+  sortSection: {
+    width: '100%',
+    alignItems: 'center',
+    marginBottom: 8,
   },
 
   sortBar: {
     flexDirection: 'row',
     alignItems: 'center',
-    justifyContent: 'flex-start',
+    justifyContent: 'center',
     gap: 8,
-    marginBottom: 8,
+    flexWrap: 'wrap',
   },
 
   sortLabel: {
-    fontSize: 13,
-    fontFamily: 'monospace',
+    fontSize: 18,
+    fontFamily: 'SpaceMono',
     fontWeight: 'bold',
-    color: '#690b22',
+    color: '#E4CAAA',
   },
 
   dropdownWrapper: {
@@ -212,7 +337,7 @@ const styles = StyleSheet.create({
 
   dropdownButtonText: {
     color: '#690b22',
-    fontFamily: 'monospace',
+    fontFamily: 'SpaceMono',
     fontSize: 14,
   },
 
@@ -250,7 +375,7 @@ const styles = StyleSheet.create({
 
   dropdownItemText: {
     color: '#690b22',
-    fontFamily: 'monospace',
+    fontFamily: 'SpaceMono',
     fontSize: 14,
   },
 
@@ -277,7 +402,7 @@ const styles = StyleSheet.create({
 
   editButtonText: {
     fontSize: 13,
-    fontFamily: 'monospace',
+    fontFamily: 'SpaceMono',
     fontWeight: 'bold',
     color: '#690b22',
   },
@@ -285,4 +410,36 @@ const styles = StyleSheet.create({
   editButtonTextActive: {
     color: '#FAF3DD',
   },
+
+  emptyListContent: {
+    flexGrow: 1,
+    justifyContent: 'center',
+    paddingVertical: 8,
+  },
+
+  emptyState: {
+    alignItems: 'center',
+    justifyContent: 'center',
+    paddingHorizontal: 24,
+    marginTop: -36,
+  },
+
+  emptyStateTitle: {
+    marginTop: 14,
+    fontSize: 24,
+    fontFamily: 'SpaceMono',
+    fontWeight: 'bold',
+    color: '#E4CAAA',
+    textAlign: 'center',
+  },
+
+  emptyStateSubtitle: {
+    marginTop: 8,
+    fontSize: 14,
+    fontFamily: 'SpaceMono',
+    color: '#E4CAAA',
+    opacity: 0.9,
+    textAlign: 'center',
+  },
 });
+

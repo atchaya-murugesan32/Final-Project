@@ -13,7 +13,6 @@ import {
   ScrollView
 } from 'react-native';
 import { BlurView } from 'expo-blur';
-import { LinearGradient } from 'expo-linear-gradient';
 import { Ionicons } from '@expo/vector-icons';
 import { createReservation } from '../api/reservations';
 
@@ -200,18 +199,11 @@ export default function ReservationModal({ visible, onClose, cafe }) {
                   onPress={handleConfirm}
                   disabled={isLoading}
                 >
-                  <LinearGradient
-                    colors={['#8a1a36', '#c4284d']}
-                    style={styles.gradientButton}
-                    start={{ x: 0, y: 0 }}
-                    end={{ x: 1, y: 0 }}
-                  >
-                    {isLoading ? (
-                      <ActivityIndicator color="#fff" />
-                    ) : (
-                      <Text style={styles.confirmButtonText}>Confirm Reservation</Text>
-                    )}
-                  </LinearGradient>
+                  {isLoading ? (
+                    <ActivityIndicator color="#fff" />
+                  ) : (
+                    <Text style={styles.confirmButtonText}>Confirm Reservation</Text>
+                  )}
                 </TouchableOpacity>
               </ScrollView>
             ) : (
@@ -249,7 +241,7 @@ const styles = StyleSheet.create({
   blurView: {
     padding: 24,
     paddingBottom: Platform.OS === 'ios' ? 40 : 24,
-    backgroundColor: 'rgba(255,255,255,0.85)',
+    backgroundColor: '#B56A3D',
   },
   header: {
     marginBottom: 20,
@@ -258,13 +250,15 @@ const styles = StyleSheet.create({
   title: {
     fontSize: 24,
     fontWeight: '700',
-    color: '#333',
+    color: '#FAF3DD',
+    fontFamily: 'SpaceMono',
     marginBottom: 4,
   },
   subtitle: {
     fontSize: 16,
-    color: '#666',
+    color: '#FAF3DD',
     fontWeight: '500',
+    fontFamily: 'SpaceMono',
   },
   closeButton: {
     position: 'absolute',
@@ -278,19 +272,21 @@ const styles = StyleSheet.create({
   label: {
     fontSize: 14,
     fontWeight: '600',
-    color: '#444',
+    color: '#FAF3DD',
     marginBottom: 8,
     textTransform: 'uppercase',
     letterSpacing: 0.5,
+    fontFamily: 'SpaceMono',
   },
   input: {
-    backgroundColor: 'rgba(255,255,255,0.7)',
+    backgroundColor: '#FAF3DD',
     borderWidth: 1,
-    borderColor: '#e0e0e0',
+    borderColor: '#7A7849',
     borderRadius: 12,
     padding: 14,
     fontSize: 16,
     color: '#333',
+    fontFamily: 'SpaceMono',
   },
   textArea: {
     height: 100,
@@ -305,17 +301,18 @@ const styles = StyleSheet.create({
     paddingVertical: 10,
     paddingHorizontal: 16,
     borderRadius: 20,
-    backgroundColor: 'rgba(255,255,255,0.7)',
+    backgroundColor: '#FAF3DD',
     borderWidth: 1,
-    borderColor: '#ddd',
+    borderColor: '#7A7849',
   },
   timeChipActive: {
-    backgroundColor: '#8a1a36',
-    borderColor: '#8a1a36',
+    backgroundColor: '#7A7849',
+    borderColor: '#7A7849',
   },
   timeText: {
-    color: '#666',
+    color: '#7A7849',
     fontWeight: '600',
+    fontFamily: 'SpaceMono',
   },
   timeTextActive: {
     color: '#fff',
@@ -329,58 +326,59 @@ const styles = StyleSheet.create({
     width: 45,
     height: 45,
     borderRadius: 22.5,
-    backgroundColor: 'rgba(255,255,255,0.7)',
+    backgroundColor: '#FAF3DD',
     borderWidth: 1,
-    borderColor: '#ddd',
+    borderColor: '#7A7849',
     alignItems: 'center',
     justifyContent: 'center',
   },
   peopleChipActive: {
-    backgroundColor: '#8a1a36',
-    borderColor: '#8a1a36',
+    backgroundColor: '#7A7849',
+    borderColor: '#7A7849',
   },
   peopleText: {
     fontSize: 16,
-    color: '#666',
+    color: '#7A7849',
     fontWeight: '600',
+    fontFamily: 'SpaceMono',
   },
   peopleTextActive: {
     color: '#fff',
   },
   confirmButton: {
     marginTop: 10,
+    backgroundColor: '#7A7849',
     borderRadius: 16,
-    overflow: 'hidden',
+    minHeight: 52,
+    alignItems: 'center',
+    justifyContent: 'center',
     elevation: 3,
     shadowColor: '#000',
     shadowOffset: { width: 0, height: 2 },
     shadowOpacity: 0.2,
     shadowRadius: 4,
   },
-  gradientButton: {
-    paddingVertical: 16,
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
   confirmButtonText: {
     color: '#fff',
     fontSize: 18,
     fontWeight: '700',
     letterSpacing: 0.5,
+    fontFamily: 'SpaceMono',
   },
   errorBox: {
     flexDirection: 'row',
     alignItems: 'center',
-    backgroundColor: '#ffe5e5',
+    backgroundColor: '#FAF3DD',
     padding: 12,
     borderRadius: 12,
     marginBottom: 20,
   },
   errorText: {
-    color: '#d32f2f',
+    color: '#7A7849',
     marginLeft: 8,
     flex: 1,
     fontSize: 14,
+    fontFamily: 'SpaceMono',
   },
   successContainer: {
     alignItems: 'center',
@@ -390,13 +388,15 @@ const styles = StyleSheet.create({
   successTitle: {
     fontSize: 24,
     fontWeight: '700',
-    color: '#333',
+    color: '#FAF3DD',
+    fontFamily: 'SpaceMono',
     marginTop: 16,
     marginBottom: 8,
   },
   successText: {
     fontSize: 16,
-    color: '#666',
+    color: '#FAF3DD',
     textAlign: 'center',
+    fontFamily: 'SpaceMono',
   }
 });
