@@ -8,12 +8,14 @@ import {
   ActivityIndicator,
   RefreshControl,
   Alert,
-  Platform
+  Platform,
+  useWindowDimensions
 } from 'react-native';
 import { useFocusEffect } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
 import { getMyReservations, cancelReservation } from '../../src/api/reservations';
 import { useAuth } from '../../src/context/AuthContext';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 type AuthContextValue = {
   token: string | null;
@@ -21,12 +23,15 @@ type AuthContextValue = {
 };
 
 export default function ReservationsScreen() {
+  const insets = useSafeAreaInsets();
+  const { width } = useWindowDimensions();
   const auth = useAuth() as AuthContextValue | null;
   const token = auth?.token ?? null;
   const authLoading = auth?.loading ?? false;
   const [reservations, setReservations] = useState([]);
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
+  const headingFontSize = Math.max(38, Math.min(56, Math.round(width * 0.13)));
 
   const fetchReservations = async () => {
     if (!token) {
@@ -156,8 +161,8 @@ export default function ReservationsScreen() {
   }
 
   return (
-    <View style={styles.container}>
-      <Text style={styles.heading}>My Reservations</Text>
+    <View style={[styles.container, { paddingTop: insets.top + 8, paddingBottom: Math.max(12, insets.bottom) }]}>
+      <Text style={[styles.heading, { fontSize: headingFontSize }]}>My Reservations</Text>
       <Text style={styles.subheading}>Your upcoming and past bookings.</Text>
 
       {reservations.length === 0 ? (
@@ -170,7 +175,7 @@ export default function ReservationsScreen() {
           data={reservations}
           keyExtractor={(item) => item.id.toString()}
           renderItem={renderItem}
-          contentContainerStyle={styles.listContainer}
+          contentContainerStyle={[styles.listContainer, { paddingBottom: insets.bottom + 40 }]}
           refreshControl={
             <RefreshControl refreshing={refreshing} onRefresh={onRefresh} />
           }

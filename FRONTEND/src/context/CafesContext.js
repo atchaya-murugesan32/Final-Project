@@ -12,11 +12,16 @@ export const CafesProvider = ({ children }) => {
     }).catch(console.error);
   }, []);
 
+  const persist = (nextCafes) => {
+    AsyncStorage.setItem('my_saved_cafes', JSON.stringify(nextCafes)).catch(console.error);
+  };
+
   const addCafe = (cafe) => {
+    const cafeToSave = { ...cafe };
     setCafes((prevCafes) => {
-      if (prevCafes.some((c) => c.id === cafe.id)) return prevCafes;
-      const newCafes = [...prevCafes, { ...cafe, savedAt: Date.now() }];
-      AsyncStorage.setItem('my_saved_cafes', JSON.stringify(newCafes)).catch(console.error);
+      if (prevCafes.some((c) => c.id === cafeToSave.id)) return prevCafes;
+      const newCafes = [...prevCafes, { ...cafeToSave, savedAt: Date.now() }];
+      persist(newCafes);
       return newCafes;
     });
   };
@@ -24,7 +29,7 @@ export const CafesProvider = ({ children }) => {
   const removeCafe = (id) => {
     setCafes((prev) => {
       const newCafes = prev.filter((c) => c.id !== id);
-      AsyncStorage.setItem('my_saved_cafes', JSON.stringify(newCafes)).catch(console.error);
+      persist(newCafes);
       return newCafes;
     });
   };

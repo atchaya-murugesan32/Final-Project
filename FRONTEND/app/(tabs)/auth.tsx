@@ -1,9 +1,10 @@
 import React, { useState, useCallback } from 'react';
-import { View, Text, ScrollView, StyleSheet, ActivityIndicator, RefreshControl, TouchableOpacity, Dimensions } from 'react-native';
+import { View, Text, ScrollView, StyleSheet, ActivityIndicator, RefreshControl, TouchableOpacity, Dimensions, useWindowDimensions } from 'react-native';
 import Animated, { FadeInDown } from 'react-native-reanimated';
 import { useFocusEffect, router } from 'expo-router';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { useAuth } from '../../src/context/AuthContext';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import UserProfile from '../../src/components/dashboard/UserProfile';
 import PersonalStats from '../../src/components/dashboard/PersonalStats';
@@ -37,6 +38,8 @@ type AuthContextValue = {
 };
 
 export default function AccountScreen() {
+  const insets = useSafeAreaInsets();
+  const { width } = useWindowDimensions();
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
   
@@ -47,6 +50,7 @@ export default function AccountScreen() {
   const [notifications, setNotifications] = useState(null);
   const [activity, setActivity] = useState([]);
   const [aiHistory, setAiHistory] = useState([]);
+  const headingFontSize = Math.max(38, Math.min(56, Math.round(width * 0.13)));
 
   const [error, setError] = useState<string | null>(null);
   const auth = useAuth() as AuthContextValue | null;
@@ -143,12 +147,12 @@ export default function AccountScreen() {
   return (
     <View style={styles.container}>
       <ScrollView 
-        contentContainerStyle={styles.scrollContent}
+        contentContainerStyle={[styles.scrollContent, { paddingTop: insets.top + 8, paddingBottom: insets.bottom + 40 }]}
         refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} />}
         showsVerticalScrollIndicator={false}
       >
         <Animated.View entering={FadeInDown.duration(800).springify()}>
-          <Text style={styles.headerTitle}>Account</Text>
+          <Text style={[styles.headerTitle, { fontSize: headingFontSize }]}>Account</Text>
           
           <UserProfile profile={profile} onUpdate={fetchData} />
           

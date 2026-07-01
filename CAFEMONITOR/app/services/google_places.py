@@ -38,19 +38,11 @@ PLACE_TYPE_MAP = {
     "study space": "library",
 }
 
-FOOD_PLACE_TYPES = {
-    "cafe",
-    "restaurant",
-    "bar",
-    "brunch_restaurant",
-    "library",
-}
-
 def get_nearby_places(lat: float, lng: float, radius: float = 5000.0):
     url = "https://places.googleapis.com/v1/places:searchNearby"
 
     payload = {
-        "includedTypes": ["cafe", "restaurant", "bakery", "bar", "brunch_restaurant"],
+        "includedTypes": ["cafe", "restaurant", "bakery", "bar", "brunch_restaurant", "library"],
         "maxResultCount": 20,
         "locationRestriction": {
             "circle": {
@@ -97,7 +89,7 @@ def get_places_by_type(lat: float, lng: float, radius: float = 5000.0, place_typ
 
 
 
-def get_cafes(text_query: str, lat: float, lng: float, radius: float = 5000.0, place_type: str = ''):
+def get_cafes(text_query: str, lat: float, lng: float, radius: float = 5000.0):
     url = "https://places.googleapis.com/v1/places:searchText"
 
     payload = {
@@ -113,8 +105,6 @@ def get_cafes(text_query: str, lat: float, lng: float, radius: float = 5000.0, p
             }
         },
     }
-    if place_type:
-        payload["textQuery"] = f"{text_query} {place_type}" if text_query else place_type
 
     response = requests.post(url, json=payload, headers=headers, timeout=15)
     response.raise_for_status()

@@ -1,9 +1,8 @@
-import { mockCafes } from '../../src/data/mockCafes';
 import { getApiBaseUrl } from './baseUrl';
 
 function normalizeBusyness(item) {
   const copy = { ...item };
-  const rawDescription = copy.busyness_description ?? copy.busynessDescription ?? copy.busyness ?? '';
+  const rawDescription = copy.busyness_description;
   const normalizedDescription = String(rawDescription || '').trim().toLowerCase();
 
   const descriptionMap = {
@@ -14,9 +13,22 @@ function normalizeBusyness(item) {
     high: 'Busy',
   };
 
-  const mappedDescription = descriptionMap[normalizedDescription] || rawDescription || 'Moderate';
-  const percentValue = copy.busyness_percentage ?? copy.busynessPercent ?? copy.busyness_percent ?? 0;
-  const numericPercent = typeof percentValue === 'number' ? percentValue : Number(percentValue) || 0;
+  const percentValue = copy.busyness_percent;
+  const numericPercent = typeof percentValue === 'number' ? percentValue : Number(percentValue);
+
+  const hasDescription = typeof rawDescription === 'string' && rawDescription.trim().length > 0;
+  const hasPercent = Number.isFinite(numericPercent);
+
+  if (!hasDescription || !hasPercent) {
+    copy.busyness_description = 'N/A';
+    copy.busyness = 'N/A';
+    copy.busyness_percentage = null;
+    copy.busynessPercent = null;
+    copy.busyness_percent = null;
+    return copy;
+  }
+
+  const mappedDescription = descriptionMap[normalizedDescription] || rawDescription;
 
   copy.busyness_description = rawDescription || mappedDescription;
   copy.busyness = mappedDescription;
@@ -26,10 +38,10 @@ function normalizeBusyness(item) {
   return copy;
 }
 
-async function postSearch(endpoint, body, fallbackBuilder) {
-  const url = `${getApiBaseUrl()}${endpoint}`;
+async function postSearch(endpoint, body) {
+  const url = `${getApiBaseUrl()}${endpoint}`; //builds full url using base url and endpoint
 
-  try {
+  try { //POST request with JSON body
     const response = await fetch(url, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
@@ -37,57 +49,47 @@ async function postSearch(endpoint, body, fallbackBuilder) {
     });
 
     if (!response.ok) {
-      const errorBody = await response.text();
+      const errorBody = await response.text(); //error text from response body
       throw new Error(`Search request failed: ${response.status} ${response.statusText} ${errorBody}`);
     }
 
-    const json = await response.json();
+    const json = await response.json(); //parses json
     return Array.isArray(json) ? json.map((item) => normalizeBusyness(item)) : [];
   } catch (error) {
     console.error('search request failed:', error, { url, body });
-    if (__DEV__ && mockCafes?.length) {
-      return fallbackBuilder().map((item) => normalizeBusyness(item));
-    }
-    throw new Error('Failed to fetch cafe results. Please check backend URL and network connection.');
+    throw new Error('Search failed. Unable to reach the backend right now. Please try again.');
   }
 }
 
 export const searchSpecifiedPlaces = async (placeType, lat, lng) => {
-  const lowerType = (placeType || '').toLowerCase();
   return postSearch(
     '/cafes/searchType',
     {
       place_type: placeType,
       latitude: lat,
       longitude: lng,
-    },
-    () => mockCafes.filter((c) => c.name.toLowerCase().includes(lowerType))
+    }
   );
 };
 
 export const searchVibe = async (userQuery, lat, lng) => {
-  const lowerQuery = (userQuery || '').toLowerCase();
   return postSearch(
     '/cafes/vibesearch',
     {
       user_query: userQuery,
       latitude: lat,
       longitude: lng,
-    },
-    () => mockCafes.filter((c) => c.vibeTags?.some((tag) => tag.toLowerCase().includes(lowerQuery)))
+    }
   );
 };
 
-export const searchPlaces = async (query, lat, lng, placeType = '') => {
-  const lowerQuery = (query || '').toLowerCase();
+export const searchPlaces = async (query, lat, lng) => {
   return postSearch(
     '/cafes/search',
     {
       text_query: query,
       latitude: lat,
       longitude: lng,
-      place_type: placeType,
-    },
-    () => mockCafes.filter((c) => c.name.toLowerCase().includes(lowerQuery))
+    }
   );
 };

@@ -1,29 +1,63 @@
-import React, { useState, useRef, useEffect } from 'react';
+import React, { useEffect, useRef, useState } from 'react';
 import {
-  View,
-  Text,
-  StyleSheet,
-  TouchableOpacity,
-  Modal,
-  Animated,
-  TextInput,
   ActivityIndicator,
+  Animated,
   KeyboardAvoidingView,
+  Modal,
   Platform,
-  ScrollView
+  ScrollView,
+  StyleSheet,
+  Text,
+  TextInput,
+  TouchableOpacity,
+  View,
 } from 'react-native';
 import { BlurView } from 'expo-blur';
 import { Ionicons } from '@expo/vector-icons';
 import { createReservation } from '../api/reservations';
 
-export default function ReservationModal({ visible, onClose, cafe }) {
+type Cafe = {
+  id: string;
+  name: string;
+} | null;
+
+type ReservationModalProps = {
+  visible: boolean;
+  onClose: () => void;
+  cafe: Cafe;
+};
+
+function isValidDateFormat(value: string) {
+  return /^\d{4}-\d{2}-\d{2}$/.test(value);
+}
+
+function parseLocalDate(value: string) {
+  if (!isValidDateFormat(value)) {
+    return null;
+  }
+
+  const [year, month, day] = value.split('-').map(Number);
+  const parsed = new Date(year, month - 1, day);
+
+  if (
+    parsed.getFullYear() !== year ||
+    parsed.getMonth() !== month - 1 ||
+    parsed.getDate() !== day
+  ) {
+    return null;
+  }
+
+  return parsed;
+}
+
+export default function ReservationModal({ visible, onClose, cafe }: ReservationModalProps) {
   const [date, setDate] = useState(new Date().toISOString().split('T')[0]);
   const [time, setTime] = useState('10:00 AM');
   const [numPeople, setNumPeople] = useState(2);
   const [specialRequest, setSpecialRequest] = useState('');
   const [isLoading, setIsLoading] = useState(false);
   const [success, setSuccess] = useState(false);
-  const [error, setError] = useState(null);
+  const [error, setError] = useState<string | null>(null);
 
   const slideAnim = useRef(new Animated.Value(300)).current;
   const fadeAnim = useRef(new Animated.Value(0)).current;
@@ -49,7 +83,7 @@ export default function ReservationModal({ visible, onClose, cafe }) {
           tension: 50,
           friction: 7,
           useNativeDriver: true,
-        })
+        }),
       ]).start();
     } else {
       Animated.parallel([
@@ -65,11 +99,30 @@ export default function ReservationModal({ visible, onClose, cafe }) {
         }),
       ]).start();
     }
-  }, [visible]);
+  }, [visible, fadeAnim, scaleAnim, slideAnim]);
 
   const handleConfirm = async () => {
+    if (!cafe) {
+      return;
+    }
+
     if (!date || !time || numPeople < 1) {
-      setError("Please fill in all required fields.");
+      setError('Please fill in all required fields.');
+      return;
+    }
+
+    const selectedDate = parseLocalDate(date);
+    if (!selectedDate) {
+      setError('Please enter a valid date in YYYY-MM-DD format.');
+      return;
+    }
+
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
+    selectedDate.setHours(0, 0, 0, 0);
+
+    if (selectedDate < today) {
+      setError('Please choose today or a future date.');
       return;
     }
 
@@ -83,32 +136,30 @@ export default function ReservationModal({ visible, onClose, cafe }) {
         reservation_date: date,
         reservation_time: time,
         num_people: numPeople,
-        special_request: specialRequest
+        special_request: specialRequest,
       });
       setSuccess(true);
-      setTimeout(() => {
-        onClose();
-      }, 2000);
-    } catch (err) {
-      if (err.message === "Could not validate credentials") {
-        setError("Your session has expired. Please go to Account, log out, and log back in.");
+      setTimeout(() => onClose(), 2000);
+    } catch (err: unknown) {
+      const message = err instanceof Error ? err.message : 'Something went wrong.';
+
+      if (message === 'Could not validate credentials') {
+        setError('Your session has expired. Please go to Account, log out, and log back in.');
       } else {
-        setError(err.message);
+        setError(message);
       }
     } finally {
       setIsLoading(false);
     }
   };
 
-  const handleClose = () => {
-    onClose();
-  };
+  const handleClose = () => onClose();
 
   if (!cafe) return null;
 
   return (
     <Modal visible={visible} transparent animationType="none" onRequestClose={handleClose}>
-      <KeyboardAvoidingView 
+      <KeyboardAvoidingView
         style={styles.modalContainer}
         behavior={Platform.OS === 'ios' ? 'padding' : undefined}
       >
@@ -119,11 +170,10 @@ export default function ReservationModal({ visible, onClose, cafe }) {
         <Animated.View
           style={[
             styles.contentContainer,
-            { transform: [{ translateY: slideAnim }, { scale: scaleAnim }], opacity: fadeAnim }
+            { transform: [{ translateY: slideAnim }, { scale: scaleAnim }], opacity: fadeAnim },
           ]}
         >
           <BlurView intensity={90} tint="light" style={styles.blurView}>
-            
             {!success ? (
               <ScrollView showsVerticalScrollIndicator={false}>
                 <View style={styles.header}>
@@ -156,8 +206,8 @@ export default function ReservationModal({ visible, onClose, cafe }) {
                   <Text style={styles.label}>Time</Text>
                   <View style={styles.timeSelector}>
                     {['10:00 AM', '1:00 PM', '4:00 PM', '7:00 PM'].map((t) => (
-                      <TouchableOpacity 
-                        key={t} 
+                      <TouchableOpacity
+                        key={t}
                         style={[styles.timeChip, time === t && styles.timeChipActive]}
                         onPress={() => setTime(t)}
                       >
@@ -171,12 +221,14 @@ export default function ReservationModal({ visible, onClose, cafe }) {
                   <Text style={styles.label}>Number of People</Text>
                   <View style={styles.peopleSelector}>
                     {[1, 2, 3, 4, 5, 6].map((num) => (
-                      <TouchableOpacity 
-                        key={num} 
+                      <TouchableOpacity
+                        key={num}
                         style={[styles.peopleChip, numPeople === num && styles.peopleChipActive]}
                         onPress={() => setNumPeople(num)}
                       >
-                        <Text style={[styles.peopleText, numPeople === num && styles.peopleTextActive]}>{num}</Text>
+                        <Text style={[styles.peopleText, numPeople === num && styles.peopleTextActive]}>
+                          {num}
+                        </Text>
                       </TouchableOpacity>
                     ))}
                   </View>
@@ -194,8 +246,8 @@ export default function ReservationModal({ visible, onClose, cafe }) {
                   />
                 </View>
 
-                <TouchableOpacity 
-                  style={styles.confirmButton} 
+                <TouchableOpacity
+                  style={styles.confirmButton}
                   onPress={handleConfirm}
                   disabled={isLoading}
                 >
@@ -213,7 +265,6 @@ export default function ReservationModal({ visible, onClose, cafe }) {
                 <Text style={styles.successText}>We look forward to seeing you at {cafe.name}.</Text>
               </View>
             )}
-
           </BlurView>
         </Animated.View>
       </KeyboardAvoidingView>
@@ -398,5 +449,5 @@ const styles = StyleSheet.create({
     color: '#FAF3DD',
     textAlign: 'center',
     fontFamily: 'SpaceMono',
-  }
+  },
 });

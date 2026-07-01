@@ -1,4 +1,4 @@
-﻿import { View, Text, FlatList, TextInput, StyleSheet, ScrollView, TouchableOpacity, ActivityIndicator, Modal, Pressable } from 'react-native';
+﻿import { View, Text, FlatList, TextInput, StyleSheet, ScrollView, TouchableOpacity, ActivityIndicator, Modal, Pressable, useWindowDimensions } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import CafeCard from '../../src/components/CafeCard';
 import { useState, useEffect, useMemo } from 'react';
@@ -7,6 +7,7 @@ import { useCafes } from '../../src/context/CafesContext';
 import { getUserLocation } from '../../src/utils/location';
 import { getFavorites, addFavorite, removeFavorite } from '../../src/api/dashboard';
 import { useAuth } from '../../src/context/AuthContext';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 type Cafe = {
   id: string;
@@ -84,6 +85,8 @@ type AuthContextValue = {
 };
 
 export default function ExploreScreen() {
+  const insets = useSafeAreaInsets();
+  const { width } = useWindowDimensions();
   const { addCafe } = useCafes();
   const auth = useAuth() as AuthContextValue | null;
   const token = auth?.token ?? null;
@@ -97,6 +100,7 @@ export default function ExploreScreen() {
   const [sortOpen, setSortOpen] = useState(false);
   const [favorites, setFavorites] = useState<any[]>([]);
   const isInitialEmptyState = results.length === 0 && query.length === 0;
+  const headingFontSize = Math.max(36, Math.min(54, Math.round(width * 0.12)));
 
   // Fetch favorites on mount
   useEffect(() => {
@@ -197,17 +201,17 @@ export default function ExploreScreen() {
   }, [results, sortMode]);
 
   return (
-    <View style={styles.container}>
+    <View style={[styles.container, { paddingTop: insets.top + 8, paddingBottom: Math.max(12, insets.bottom) }]}>
 
       {/* Header */}
-      <Text style={styles.heading}>Find your next brew</Text>
-      <Text style={styles.subheading}>Search for a cafÃ© or restaurant near you</Text>
+      <Text style={[styles.heading, { fontSize: headingFontSize }]}>Find your next brew</Text>
+      <Text style={styles.subheading}>Search for a cafe or restaurant near you</Text>
 
       {/* Search bar */}
       <View style={styles.searchContainer}>
         <Ionicons name="search-outline" size={18} color="#6c5550" style={styles.searchIcon} />
         <TextInput
-          placeholder="E.g. cozy cafe near me"
+          placeholder="E.g. Cozy cafe near me..."
           placeholderTextColor="#6c5550"
           value={query}
           onChangeText={(text) => {
@@ -360,7 +364,7 @@ export default function ExploreScreen() {
             </View>
           )
         }
-        contentContainerStyle={{ paddingTop: 8, paddingBottom: 40 }}
+        contentContainerStyle={{ paddingTop: 8, paddingBottom: insets.bottom + 48 }}
       />
 
     </View>

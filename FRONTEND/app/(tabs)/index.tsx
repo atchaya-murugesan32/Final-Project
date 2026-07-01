@@ -1,4 +1,4 @@
-﻿import { View, Text, FlatList, StyleSheet, TouchableOpacity, Modal, Pressable } from 'react-native';
+﻿import { View, Text, FlatList, StyleSheet, TouchableOpacity, Modal, Pressable, useWindowDimensions } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import CafeCard from '../../src/components/CafeCard';
 import { useCafes } from '../../src/context/CafesContext';
@@ -9,6 +9,7 @@ import { useAuth } from '../../src/context/AuthContext';
 import { useFocusEffect } from 'expo-router';
 import * as Location from 'expo-location';
 import { distanceInMiles } from '../../src/utils/distance';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 const sortOptions = [
   { label: 'Most recent', value: 'recent' },
@@ -24,6 +25,8 @@ type AuthContextValue = {
 };
 
 export default function CafeListScreen() {
+  const insets = useSafeAreaInsets();
+  const { width } = useWindowDimensions();
   const { cafes, removeCafe } = useCafes();
   const auth = useAuth() as AuthContextValue | null;
   const token = auth?.token ?? null;
@@ -34,6 +37,7 @@ export default function CafeListScreen() {
   const [editMode, setEditMode] = useState(false);
   const [favorites, setFavorites] = useState<any[]>([]);
   const [userLocation, setUserLocation] = useState<{ latitude: number; longitude: number } | null>(null);
+  const headingFontSize = Math.max(40, Math.min(58, Math.round(width * 0.135)));
 
   //runs when the component mounts and when the token or authLoading changes
   //fetches the user's favorite cafes from the backend if the user is logged in
@@ -174,8 +178,8 @@ export default function CafeListScreen() {
   //return the UI for the cafe list screen, including the sort dropdown, edit button, and the list of cafes
   return (
     //heading and subheading for the cafe list screen
-    <View style={styles.container}>
-      <Text style={styles.heading}>Your Cafes</Text>
+    <View style={[styles.container, { paddingTop: insets.top + 8, paddingBottom: Math.max(12, insets.bottom) }]}>
+      <Text style={[styles.heading, { fontSize: headingFontSize }]}>Your Cafes</Text>
       <Text style={styles.subheading}>Eateries saved, and loved by you.</Text>
 
       {/* Sort dropdown */}
@@ -260,7 +264,11 @@ export default function CafeListScreen() {
             <Text style={styles.emptyStateSubtitle}>Tap the + button to add your first spot.</Text>
           </View>
         )}
-        contentContainerStyle={sortedCafes.length === 0 ? styles.emptyListContent : { paddingVertical: 8 }}
+        contentContainerStyle={
+          sortedCafes.length === 0
+            ? [styles.emptyListContent, { paddingBottom: insets.bottom + 92 }]
+            : { paddingTop: 8, paddingBottom: insets.bottom + 92 }
+        }
       />
 
       <AddCafeButton />

@@ -7,7 +7,6 @@ class CafeSearchRequest(BaseModel):
     latitude: float
     longitude: float
     radius: float = 5000.0
-    place_type: str = ''
 
 
 class SpecifiedPlaceRequest(BaseModel):
@@ -26,3 +25,15 @@ class VibeSearchRequest(BaseModel):
 
 class ChatRequest(BaseModel):
     message: str
+
+
+class CafeAddRequest(BaseModel):
+    name: str
+    address: str
+    rating: float = 0.0
+    rating_count: int = 0
+    maps_uri: str = ""
+    website_uri: str | None = None
+    photo: str | None = None
+    latitude: float | None = None
+    longitude: float | None = None

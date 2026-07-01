@@ -174,6 +174,7 @@ export default function CafeDetailScreen() {
         source={require('../../assets/images/noise_overlay.png')}
         style={styles.noiseOverlay}
         resizeMode="repeat"
+        pointerEvents="none"
       />
 
       {/* Floating navigation header */}
@@ -289,7 +290,7 @@ const styles = StyleSheet.create({
     right: 0,
     bottom: 0,
     opacity: 0.07,
-    zIndex: 99,
+    zIndex: 0,
   },
   center: {
     justifyContent: 'center',

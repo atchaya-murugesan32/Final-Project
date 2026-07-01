@@ -16,12 +16,12 @@ function BusynessBadgeWeb({ busyness, percent }) {
   return (
     <View style={[styles.busynessBadge, { backgroundColor: bg }]}> 
       <View style={[styles.busynessDot, { backgroundColor: dot }]} />
-      <Text style={[styles.busynessText, { color: busy ? busy.text : '#333' }]}>{label ?? ''}{percent != null ? ` â€¢ ${percent}%` : ''}</Text>
+      <Text style={[styles.busynessText, { color: busy ? busy.text : '#333' }]}>{label ?? ''}{percent != null ? ` | ${percent}%` : ''}</Text>
     </View>
   );
 }
 
-// react-native-maps doesn't render on web, so we show a simple list of saved cafÃ©s instead.
+// react-native-maps doesn't render on web, so we show a simple list of saved cafes instead.
 export default function CafeMap({ cafes, onSelectCafe }) {
   return (
     <View style={styles.container}>
@@ -50,15 +50,15 @@ export default function CafeMap({ cafes, onSelectCafe }) {
             <TouchableOpacity style={styles.row} onPress={() => onSelectCafe(item.id)} activeOpacity={0.8}>
               <BusynessBadgeWeb busyness={item.busyness} percent={percent} />
               <View style={{ flex: 1 }}>
-                <Text style={styles.rowName}>â˜• {item.name}</Text>
+                <Text style={styles.rowName}>{item.name}</Text>
                 <Text style={styles.rowMeta}>
-                  {item.rating}â˜… Â· {item.distanceLabel} away
+                  {item.rating} stars | {item.distanceLabel} away
                 </Text>
               </View>
             </TouchableOpacity>
           );
         }}
-        ListEmptyComponent={<Text style={styles.subheading}>No saved cafÃ©s yet.</Text>}
+        ListEmptyComponent={<Text style={styles.subheading}>No saved cafes yet.</Text>}
         contentContainerStyle={{ paddingVertical: 8 }}
       />
     </View>
