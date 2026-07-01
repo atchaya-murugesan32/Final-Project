@@ -1,31 +1,37 @@
-import { createContext, useState, useContext } from 'react';
+import { createContext, useState, useContext, useEffect } from 'react';
+import AsyncStorage from '@react-native-async-storage/async-storage';
 
 const CafesContext = createContext();
 
 export const CafesProvider = ({ children }) => {
   const [cafes, setCafes] = useState([]);
 
+  useEffect(() => {
+    AsyncStorage.getItem('my_saved_cafes').then(data => {
+      if (data) setCafes(JSON.parse(data));
+    }).catch(console.error);
+  }, []);
 
-    function generateRandomBusyness() {
-      const percent = Math.floor(Math.random() * 86) + 5; // 5 - 90
-      let label = 'Moderate';
-      if (percent < 35) label = 'Quiet';
-      else if (percent >= 70) label = 'Busy';
-      return { busyness: label, busynessPercent: percent };
-    }
+  const persist = (nextCafes) => {
+    AsyncStorage.setItem('my_saved_cafes', JSON.stringify(nextCafes)).catch(console.error);
+  };
 
-    const addCafe = (cafe) => {
-      setCafes((prevCafes) => {
-        if (prevCafes.some((c) => c.id === cafe.id)) return prevCafes;
-        // Attach persistent busyness if not present
-        const hasBusyness = cafe.busyness != null || cafe.busynessPercent != null || cafe.busyness_percent != null;
-        const b = hasBusyness ? {} : generateRandomBusyness();
-        return [...prevCafes, { ...cafe, ...b, savedAt: Date.now() }];
-      });
-    };
+  const addCafe = (cafe) => {
+    const cafeToSave = { ...cafe };
+    setCafes((prevCafes) => {
+      if (prevCafes.some((c) => c.id === cafeToSave.id)) return prevCafes;
+      const newCafes = [...prevCafes, { ...cafeToSave, savedAt: Date.now() }];
+      persist(newCafes);
+      return newCafes;
+    });
+  };
 
-    const removeCafe = (id) => {
-    setCafes((prev) => prev.filter((c) => c.id !== id));
+  const removeCafe = (id) => {
+    setCafes((prev) => {
+      const newCafes = prev.filter((c) => c.id !== id);
+      persist(newCafes);
+      return newCafes;
+    });
   };
 
    return (

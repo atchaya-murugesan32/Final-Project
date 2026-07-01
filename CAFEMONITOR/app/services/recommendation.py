@@ -1,21 +1,26 @@
 from app.models.response_models import CafeResponse
-from app.services.google_places import get_cafes, get_places_by_type, get_place_details, get_nearby_places
-from app.services.distance import calculate_distance
+from app.services.google_places import get_cafes, get_places_by_type, get_nearby_places
 from app.services.semantic_search import semantic_search
 
 from app.config.settings import settings
 
-#TO ADD function which gets nearby eateries based on radius
-#for each place, embed its review summary and make a dict of placeid: embedding
-#embed user query and find most similar with cosine similairity
-#return the top 5 places with their details and photos
+
+def _mock_busyness(place_id: str, place_name: str):
+    seed = sum(ord(c) for c in f"{place_id}{place_name}")
+    percent = 15 + (seed % 76)  # 15-90
+
+    if percent < 35:
+        return percent, "Quiet", "low"
+    if percent < 70:
+        return percent, "Moderate", "average"
+    return percent, "Busy", "high"
 
 def get_recommendations_by_vibe(lat: float, lng: float, radius: float = 5000.0, user_query: str = ''):
     places = get_nearby_places(lat=lat, lng=lng, radius=radius)
 
     if not user_query.strip() or not places:
         return create_responses(places[:5], lat, lng)
-
+    
     place_summaries = {}
 
     for place in places:
@@ -35,8 +40,8 @@ def get_recommendations_by_type(lat: float, lng: float, radius: float = 5000.0, 
     return create_responses(places[:5], lat, lng)
 
 
-def get_recommendations(text_query: str, lat: float, lng: float, radius: float = 5000.0, place_type: str = ''):
-    places = get_cafes(text_query=text_query, lat=lat, lng=lng, radius=radius, place_type=place_type)
+def get_recommendations(text_query: str, lat: float, lng: float, radius: float = 5000.0):
+    places = get_cafes(text_query=text_query, lat=lat, lng=lng, radius=radius)
 
     eatery_types = {
         "restaurant", "cafe", "bar", "bakery", "fast_food_restaurant",
@@ -59,12 +64,10 @@ def create_responses(places: list, lat: float, lng: float) -> list:
     for place in places[:5]:
         display_name = place.get("displayName", {})
         name = display_name.get("text", "Unknown")
+        place_id = place.get("id", "")
 
-        # extract photo names and build URLs
+        # Use only the photos returned by the search response.
         photos = place.get("photos", [])
-        if not photos:
-            details = get_place_details(place.get("id", ""))
-            photos = details.get("photos", [])
 
         fallback_images = [
             "https://images.unsplash.com/photo-1501339847302-ac426a4a7cbb?auto=format&fit=crop&w=600&q=80",
@@ -106,23 +109,27 @@ def create_responses(places: list, lat: float, lng: float) -> list:
         location = place.get("location", {})
         lat_location = location.get("latitude", 0.0)
         lng_location = location.get("longitude", 0.0)
-
-        distance_kilometers = calculate_distance(lat, lng, lat_location, lng_location)  # Placeholder for actual user location
-
-
+        address = place.get("formattedAddress", "Unknown")
+        busyness_percent, busyness_label, busyness_description = _mock_busyness(place_id, name)
 
         recommendations.append(
             CafeResponse(
-                id=place.get("id", ""),
+            id=place_id,
                 name=name,
-                address=place.get("formattedAddress", "Unknown"),
-                distance_from_user=distance_kilometers,
+                address=address,
+                distance_from_user=None, #dont need anymore?
                 rating=place.get("rating", 0.0),
                 rating_count=place.get("userRatingCount", 0),
-                busyness="Unknown",
+            busyness=busyness_label,
+            busyness_percent=busyness_percent,
+            busyness_description=busyness_description,
                 price_range=price_range,
                 maps_uri=place.get("googleMapsUri", ""),
                 website_uri=place.get("websiteUri"),
+                editorial_summary=(
+                    place.get("editorialSummary", {}).get("text")
+                    or place.get("reviewSummary", {}).get("text", {}).get("text")
+                ),
                 photos=photo_urls,
                 opening_hours=opening_hours,
                 latitude=lat_location,

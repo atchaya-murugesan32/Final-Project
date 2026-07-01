@@ -1,4 +1,4 @@
-import { TouchableOpacity, Text, StyleSheet } from 'react-native';
+﻿import { TouchableOpacity, Text, StyleSheet } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { useRouter } from 'expo-router';
 
@@ -12,7 +12,7 @@ export default function AddCafeButton() {
       activeOpacity={0.85}
     >
       <Ionicons name="add" size={22} color="#FFFFFF" />
-      <Text style={styles.addBarText}>Tap to add</Text>
+      <Text style={styles.addBarText}>What's your vibe?</Text>
     </TouchableOpacity>
   );
 }
@@ -28,7 +28,7 @@ const styles = StyleSheet.create({
     paddingHorizontal: 22,
     height: 52,
     borderRadius: 26,
-    backgroundColor: '#1A7A5E',
+    backgroundColor: '#B56A3D',
     justifyContent: 'center',
     shadowColor: '#000',
     shadowOffset: { width: 0, height: 2 },
@@ -39,7 +39,8 @@ const styles = StyleSheet.create({
   addBarText: {
     color: '#FFFFFF',
     fontSize: 15,
-    fontFamily: 'monospace',
+    fontFamily: 'SpaceMono',
     fontWeight: 'bold',
   },
 });
+

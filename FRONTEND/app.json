@@ -43,13 +43,15 @@
       [
         "expo-location",
         {
-          "locationWhenInUsePermission": "ZenBrew uses your location to show how far your saved cafés are from you."
+          "locationWhenInUsePermission": "ZenBrew uses your location to show how far your saved caf\u00c3\u00a9s are from you."
         }
       ]
     ],
     "experiments": {
-      "typedRoutes": true,
-      "reactCompiler": true
+      "typedRoutes": true
+    },
+    "extra": {
+      "apiUrl": "http://127.0.0.1:8000"
     }
   }
 }

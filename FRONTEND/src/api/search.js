@@ -1,85 +1,95 @@
-import { mockCafes } from '../../src/data/mockCafes';
+import { getApiBaseUrl } from './baseUrl';
 
-function stripBusyness(item) {
+function normalizeBusyness(item) {
   const copy = { ...item };
-  delete copy.busyness;
-  delete copy.busynessPercent;
-  delete copy.busyness_percent;
+  const rawDescription = copy.busyness_description;
+  const normalizedDescription = String(rawDescription || '').trim().toLowerCase();
+
+  const descriptionMap = {
+    low: 'Quiet',
+    'below average': 'Quiet',
+    average: 'Moderate',
+    'above average': 'Busy',
+    high: 'Busy',
+  };
+
+  const percentValue = copy.busyness_percent;
+  const numericPercent = typeof percentValue === 'number' ? percentValue : Number(percentValue);
+
+  const hasDescription = typeof rawDescription === 'string' && rawDescription.trim().length > 0;
+  const hasPercent = Number.isFinite(numericPercent);
+
+  if (!hasDescription || !hasPercent) {
+    copy.busyness_description = 'N/A';
+    copy.busyness = 'N/A';
+    copy.busyness_percentage = null;
+    copy.busynessPercent = null;
+    copy.busyness_percent = null;
+    return copy;
+  }
+
+  const mappedDescription = descriptionMap[normalizedDescription] || rawDescription;
+
+  copy.busyness_description = rawDescription || mappedDescription;
+  copy.busyness = mappedDescription;
+  copy.busyness_percentage = numericPercent;
+  copy.busynessPercent = numericPercent;
+  copy.busyness_percent = numericPercent;
   return copy;
 }
 
+async function postSearch(endpoint, body) {
+  const url = `${getApiBaseUrl()}${endpoint}`; //builds full url using base url and endpoint
+
+  try { //POST request with JSON body
+    const response = await fetch(url, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(body),
+    });
+
+    if (!response.ok) {
+      const errorBody = await response.text(); //error text from response body
+      throw new Error(`Search request failed: ${response.status} ${response.statusText} ${errorBody}`);
+    }
+
+    const json = await response.json(); //parses json
+    return Array.isArray(json) ? json.map((item) => normalizeBusyness(item)) : [];
+  } catch (error) {
+    console.error('search request failed:', error, { url, body });
+    throw new Error('Search failed. Unable to reach the backend right now. Please try again.');
+  }
+}
+
 export const searchSpecifiedPlaces = async (placeType, lat, lng) => {
-  try {
-    const response = await fetch('http://192.168.1.31:8000/cafes/searchType', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({
-        place_type: placeType,
-        latitude: lat,
-        longitude: lng,
-      }),
-    });
-
-    if (!response.ok) throw new Error('Failed to fetch results');
-
-    const json = await response.json();
-    return json.map((item) => stripBusyness(item));
-  } catch (err) {
-    console.warn('searchSpecifiedPlaces: backend unavailable, falling back to mockCafes', err);
-    const filterTerm = (placeType || '').toLowerCase();
-    return mockCafes
-      .filter((c) => c.name.toLowerCase().includes(filterTerm))
-      .map((c) => stripBusyness(c));
-  }
+  return postSearch(
+    '/cafes/searchType',
+    {
+      place_type: placeType,
+      latitude: lat,
+      longitude: lng,
+    }
+  );
 };
+
 export const searchVibe = async (userQuery, lat, lng) => {
-  try {
-    const response = await fetch('http://192.168.1.31:8000/cafes/vibesearch', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({
-        user_query: userQuery,
-        latitude: lat,
-        longitude: lng,
-      }),
-    });
-
-    if (!response.ok) throw new Error('Failed to fetch results');
-
-    const json = await response.json();
-    return json.map((item) => stripBusyness(item));
-  } catch (err) {
-    console.warn('searchVibe: backend unavailable, falling back to mockCafes', err);
-    const lowerQuery = (userQuery || '').toLowerCase();
-    return mockCafes
-      .filter((c) => c.vibeTags?.some((tag) => tag.toLowerCase().includes(lowerQuery)))
-      .map((c) => stripBusyness(c));
-  }
+  return postSearch(
+    '/cafes/vibesearch',
+    {
+      user_query: userQuery,
+      latitude: lat,
+      longitude: lng,
+    }
+  );
 };
 
-export const searchPlaces = async (query, lat, lng, placeType = '') => {
-  try {
-    const response = await fetch('http://192.168.1.31:8000/cafes/search', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({
-        text_query: query,
-        latitude: lat,
-        longitude: lng,
-        place_type: placeType,
-      }),
-    });
-
-    if (!response.ok) throw new Error('Failed to fetch results');
-
-    const json = await response.json();
-    // Do NOT attach busyness server-side — return raw items but strip any busyness fields
-    return json.map((item) => stripBusyness(item));
-  } catch (err) {
-    // Backend not available — fall back to mocks but strip busyness so UI treats them as "real" results
-    console.warn('searchPlaces: backend unavailable, falling back to mockCafes', err);
-    return mockCafes
-      .filter((c) => c.name.toLowerCase().includes((query || '').toLowerCase()))
-      .map((c) => stripBusyness(c));
-  }
+export const searchPlaces = async (query, lat, lng) => {
+  return postSearch(
+    '/cafes/search',
+    {
+      text_query: query,
+      latitude: lat,
+      longitude: lng,
+    }
+  );
 };

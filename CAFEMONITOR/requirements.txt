@@ -5,3 +5,11 @@ pymysql
 requests
 python-dotenv
 pydantic-settings
+python-jose[cryptography]
+passlib[bcrypt]
+bcrypt==4.0.1
+python-multipart
+email-validator
+sentence-transformers
+certifi
+google-generativeai

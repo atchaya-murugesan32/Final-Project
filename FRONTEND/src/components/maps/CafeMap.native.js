@@ -1,6 +1,8 @@
-import { View, Text, StyleSheet, Animated } from 'react-native';
+﻿import { View, Text, StyleSheet, Animated, useWindowDimensions } from 'react-native';
 import { useEffect, useRef } from 'react';
 import MapView, { Marker, Callout, PROVIDER_DEFAULT } from 'react-native-maps';
+import { Ionicons } from '@expo/vector-icons';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 const BUSYNESS_STYLES = {
   Quiet:    { bg: '#E3F4ED', dot: '#1A7A5E', text: '#1A7A5E', label: 'Quiet' },
@@ -29,12 +31,16 @@ function BusynessBadge({ busyness, percent }) {
   return (
     <View style={[styles.busynessBadge, { backgroundColor: busy.bg }]}>
       <Animated.View style={[styles.busynessDot, { backgroundColor: busy.dot, transform: [{ scale: pulse }] }]} />
-      <Text style={[styles.busynessText, { color: busy.text }]}>{busy.label} • {percent ?? ''}%</Text>
+      <Text style={[styles.busynessText, { color: busy.text }]}>{busy.label} | {percent ?? ''}%</Text>
     </View>
   );
 }
 
 export default function CafeMap({ cafes, region, permissionDenied, onSelectCafe }) {
+  const insets = useSafeAreaInsets();
+  const { width } = useWindowDimensions();
+  const headingFontSize = Math.max(30, Math.min(42, Math.round(width * 0.095)));
+
   return (
     <View style={styles.container}>
       <MapView
@@ -69,11 +75,13 @@ export default function CafeMap({ cafes, region, permissionDenied, onSelectCafe 
               <Callout tooltip onPress={() => onSelectCafe(cafe.id)}>
                 <View style={styles.callout}>
                   <Text style={styles.calloutName}>{cafe.name}</Text>
-                  <Text style={styles.calloutMeta}>
-                    {cafe.rating}★ · {cafe.distanceLabel} away
-                  </Text>
+                  <View style={styles.calloutMetaRow}>
+                    <Ionicons name="star" size={12} color="#F5A623" />
+                    <Text style={styles.calloutMeta}>{cafe.rating}</Text>
+                    <Text style={styles.calloutMeta}>| {cafe.distanceLabel} away</Text>
+                  </View>
                   <BusynessBadge busyness={cafe.busyness} percent={percent} />
-                  <Text style={styles.calloutLink}>View details →</Text>
+                  <Text style={styles.calloutLink}>View details -&gt;</Text>
                 </View>
               </Callout>
             </Marker>
@@ -82,18 +90,18 @@ export default function CafeMap({ cafes, region, permissionDenied, onSelectCafe 
       </MapView>
 
       {/* Floating header */}
-      <View style={styles.headerOverlay} pointerEvents="none">
-        <Text style={styles.heading}>Your Map</Text>
+      <View style={[styles.headerOverlay, { top: insets.top + 8 }]} pointerEvents="none">
+        <Text style={[styles.heading, { fontSize: headingFontSize }]}>Your Map</Text>
         <Text style={styles.subheading}>
           {permissionDenied
             ? 'Enable location to see distances from you.'
-            : 'Your saved cafés, near you.'}
+            : 'Your saved cafes, near you.'}
         </Text>
       </View>
 
       {cafes.length === 0 && (
-        <View style={styles.emptyOverlay} pointerEvents="none">
-          <Text style={styles.emptyText}>No saved cafés to map yet.</Text>
+        <View style={[styles.emptyOverlay, { bottom: insets.bottom + 16 }]} pointerEvents="none">
+          <Text style={styles.emptyText}>No saved cafes to map yet.</Text>
         </View>
       )}
     </View>
@@ -123,7 +131,7 @@ const styles = StyleSheet.create({
   },
   subheading: {
     fontSize: 13,
-    fontFamily: 'monospace',
+    fontFamily: 'SpaceMono',
     fontWeight: 'bold',
     color: '#690b22',
   },
@@ -138,20 +146,25 @@ const styles = StyleSheet.create({
   },
   calloutName: {
     fontSize: 15,
-    fontFamily: 'monospace',
+    fontFamily: 'SpaceMono',
     fontWeight: 'bold',
     color: '#690b22',
     marginBottom: 2,
   },
   calloutMeta: {
     fontSize: 12,
-    fontFamily: 'monospace',
+    fontFamily: 'SpaceMono',
     color: '#813D18',
+  },
+  calloutMetaRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 4,
     marginBottom: 6,
   },
   calloutLink: {
     fontSize: 12,
-    fontFamily: 'monospace',
+    fontFamily: 'SpaceMono',
     fontWeight: 'bold',
     color: '#1A7A5E',
   },
@@ -176,7 +189,7 @@ const styles = StyleSheet.create({
   },
   calloutBusy: {
     fontSize: 12,
-    fontFamily: 'monospace',
+    fontFamily: 'SpaceMono',
     fontWeight: '700',
     color: '#fff',
     backgroundColor: '#FF6B6B',
@@ -198,8 +211,9 @@ const styles = StyleSheet.create({
   },
   emptyText: {
     fontSize: 14,
-    fontFamily: 'monospace',
+    fontFamily: 'SpaceMono',
     fontWeight: 'bold',
     color: '#690b22',
   },
 });
+
